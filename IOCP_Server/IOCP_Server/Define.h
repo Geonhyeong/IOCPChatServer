@@ -20,19 +20,20 @@ struct OverlappedEx
 	IOEvent			ioEvent;					// 작업 동작 종류
 };
 
-struct ClientInfo
+struct Session
 {
-	SOCKET			clientSocket;
+	SOCKET			socket;
 	OverlappedEx	recvOverlappedEx;
 	OverlappedEx	sendOverlappedEx;
 
+	UINT32			sessionId = 0;
 	char			recvBuffer[MAX_SOCKET_BUFFER];
 	char			sendBuffer[MAX_SOCKET_BUFFER];
 
-	ClientInfo()
+	Session()
 	{
 		ZeroMemory(&recvOverlappedEx, sizeof(OverlappedEx));
 		ZeroMemory(&sendOverlappedEx, sizeof(OverlappedEx));
-		clientSocket = INVALID_SOCKET;
+		socket = INVALID_SOCKET;
 	}
 };
