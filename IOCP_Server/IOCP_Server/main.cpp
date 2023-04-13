@@ -13,11 +13,12 @@ int main()
 	// 소켓과 서버 주소를 연결하고 등록 시킨다.
 	server.BindAndListen(SERVER_PORT);
 
-	server.StartServer(MAX_CLIENT);
+	server.Run(MAX_CLIENT);
 
 	printf("아무 키나 누를 때까지 대기합니다.\n");
 	getchar();
 
-	server.DestroyThread();
+	server.End();
+
 	return 0;
 }

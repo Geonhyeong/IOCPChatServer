@@ -111,8 +111,8 @@ public:
 
 	virtual void OnConnected(const UINT32 sessionId) = 0;
 	virtual void OnDisconnected(const UINT32 sessionId) = 0;
-	virtual void OnRecv(const UINT32 sessionId, char* buf, const UINT32 len) = 0;
-	virtual void OnSend(const UINT32 sessionId, char* buf, const UINT32 len) = 0;
+	virtual void OnRecv(const UINT32 sessionId, const UINT32 len, char* buf) = 0;
+	virtual void OnSend(const UINT32 sessionId, const UINT32 len, char* buf) = 0;
 
 
 private:
@@ -264,7 +264,7 @@ private:
 			// Overlapped I/O Recv 작업 결과 뒤 처리
 			if (overlappedEx->ioEvent == IOEvent::RECV)
 			{
-				OnRecv(session->sessionId, session->recvBuffer, numOfBytes);
+				OnRecv(session->sessionId, numOfBytes, session->recvBuffer);
 
 				// 클라이언트에 메세지를 에코한다.
 				RegisterSend(session, session->recvBuffer, numOfBytes);
@@ -275,7 +275,7 @@ private:
 			// Overlapped I/O Send 작업 결과 뒤 처리
 			else if (overlappedEx->ioEvent == IOEvent::SEND)
 			{
-				OnSend(session->sessionId, session->sendBuffer, numOfBytes);
+				OnSend(session->sessionId, numOfBytes, session->sendBuffer);
 			}
 			// 예외 상황
 			else

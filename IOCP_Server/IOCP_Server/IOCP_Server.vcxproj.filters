@@ -13,6 +13,7 @@
       <Filter>ServerCore</Filter>
     </ClInclude>
     <ClInclude Include="ChatServer.h" />
+    <ClInclude Include="Packet.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
