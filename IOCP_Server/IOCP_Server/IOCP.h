@@ -203,6 +203,7 @@ private:
 
 		//전송될 메세지를 복사
 		CopyMemory(session->sendBuffer, msg, len);
+		session->sendBuffer[len] = '\0';
 
 		//Overlapped I/O을 위해 각 정보를 셋팅해 준다.
 		session->sendOverlappedEx.wsaBuf.len = len;

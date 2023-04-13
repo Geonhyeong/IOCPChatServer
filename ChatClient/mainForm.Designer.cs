@@ -186,6 +186,7 @@
             this.listBoxLog.Name = "listBoxLog";
             this.listBoxLog.Size = new System.Drawing.Size(497, 256);
             this.listBoxLog.TabIndex = 41;
+            this.listBoxLog.SelectedIndexChanged += new System.EventHandler(this.listBoxLog_SelectedIndexChanged);
             // 
             // label1
             // 

@@ -104,9 +104,9 @@ namespace ChatClient
             var body = Encoding.UTF8.GetBytes(textSendText.Text);
 
             List<byte> dataSource = new List<byte>();
-            dataSource.AddRange(BitConverter.GetBytes((UInt16)(body.Length + PacketDef.PACKET_HEADER_SIZE)));
+            /*dataSource.AddRange(BitConverter.GetBytes((UInt16)(body.Length + PacketDef.PACKET_HEADER_SIZE)));
             dataSource.AddRange(BitConverter.GetBytes((UInt16)PACKET_ID.DEV_ECHO));
-            dataSource.AddRange(new byte[] { (byte)0 });
+            dataSource.AddRange(new byte[] { (byte)0 });*/
             dataSource.AddRange(body);
 
             SendPacketQueue.Enqueue(dataSource.ToArray());
@@ -372,6 +372,10 @@ namespace ChatClient
             //PostSendPacket(PACKET_ID.PACKET_ID_ROOM_RELAY_REQ, bodyData);
             //DevLog.Write($"방 릴레이 요청");
         }
-               
+
+        private void listBoxLog_SelectedIndexChanged(object sender, EventArgs e)
+        {
+
+        }
     }
 }
