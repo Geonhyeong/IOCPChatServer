@@ -3,6 +3,7 @@
 
 #include <thread>
 #include <vector>
+#include "Session.h"
 
 class IOCP
 {
@@ -109,10 +110,15 @@ public:
 			_acceptThread.join();
 	}
 
+	bool Send(const UINT32 sessionId, const UINT32 len, char* buf)
+	{
+		Session& session = _sessions[sessionId];
+		return session.RegisterSend(len, buf);
+	}
+
 	virtual void OnConnected(const UINT32 sessionId) = 0;
 	virtual void OnDisconnected(const UINT32 sessionId) = 0;
 	virtual void OnRecv(const UINT32 sessionId, const UINT32 len, char* buf) = 0;
-	virtual void OnSend(const UINT32 sessionId, const UINT32 len, char* buf) = 0;
 
 
 private:
@@ -121,7 +127,7 @@ private:
 		for (UINT32 i = 0; i < maxClientCount; i++)
 		{
 			_sessions.emplace_back();
-			_sessions[i].sessionId = i;
+			_sessions[i].Init(i);
 		}
 	}
 
@@ -147,79 +153,16 @@ private:
 		return true;
 	}
 
-	// 사용하지 않는 클라이언트 정보 구조체를 반환한다.
+	// 사용하지 않는 세션을 반환한다.
 	Session* GetEmptySession()
 	{
-		for (auto& client : _sessions)
+		for (auto& session : _sessions)
 		{
-			if (client.socket == INVALID_SOCKET)
-				return &client;
+			if (session.IsConnected() == false)
+				return &session;
 		}
 
 		return nullptr;
-	}
-
-	// IOCP 객체와 소켓과 Key를 연결시키는 역할을 한다.
-	bool BindIOCP(Session* session)
-	{
-		auto iocpHandle = CreateIoCompletionPort((HANDLE)session->socket, _iocpHandle, (ULONG_PTR)session, 0);
-
-		if (iocpHandle == NULL || iocpHandle != _iocpHandle)
-		{
-			printf("[에러] CreateIoCompletionPort()함수 실패 : %d\n", GetLastError());
-			return false;
-		}
-
-		return true;
-	}
-
-	// WSARecv Overlapped I/O 작업을 시킨다.
-	bool RegisterRecv(Session* session)
-	{
-		DWORD flag = 0;
-		DWORD numOfBytes = 0;
-		
-		// Overlapped I/O를 위해 각 정보를 세팅한다.
-		session->recvOverlappedEx.wsaBuf.len = MAX_SOCKET_BUFFER;
-		session->recvOverlappedEx.wsaBuf.buf = session->recvBuffer;
-		session->recvOverlappedEx.ioEvent = IOEvent::RECV;
-
-		int nRet = WSARecv(session->socket, &(session->recvOverlappedEx.wsaBuf), 1, &numOfBytes, &flag, (LPWSAOVERLAPPED)&(session->recvOverlappedEx), NULL);
-
-		// socket_error이면 client socket이 끊어진걸로 처리한다.
-		if (nRet == SOCKET_ERROR && (WSAGetLastError() != ERROR_IO_PENDING))
-		{
-			printf("[에러] WSARecv()함수 실패 : %d\n", WSAGetLastError());
-			return false;
-		}
-		
-		return true;
-	}
-
-	// WSASend Overlapped I/O 작업을 시킨다.
-	bool RegisterSend(Session* session, char* msg, int len)
-	{
-		DWORD numOfBytes = 0;
-
-		//전송될 메세지를 복사
-		CopyMemory(session->sendBuffer, msg, len);
-		session->sendBuffer[len] = '\0';
-
-		//Overlapped I/O을 위해 각 정보를 셋팅해 준다.
-		session->sendOverlappedEx.wsaBuf.len = len;
-		session->sendOverlappedEx.wsaBuf.buf = session->sendBuffer;
-		session->sendOverlappedEx.ioEvent = IOEvent::SEND;
-
-		int nRet = WSASend(session->socket, &(session->sendOverlappedEx.wsaBuf), 1, &numOfBytes, 0,	(LPWSAOVERLAPPED)&(session->sendOverlappedEx), NULL);
-
-		//socket_error이면 client socket이 끊어진걸로 처리한다.
-		if (nRet == SOCKET_ERROR && (WSAGetLastError() != ERROR_IO_PENDING))
-		{
-			printf("[에러] WSASend()함수 실패 : %d\n", WSAGetLastError());
-			return false;
-		}
-
-		return true;
 	}
 
 	// Overlapped I/O 작업에 대한 완료 통보를 받아 그에 해당하는 처리를 하는 함수
@@ -261,26 +204,24 @@ private:
 
 			OverlappedEx* overlappedEx = (OverlappedEx*)lpOverlapped;
 
-			// Overlapped I/O Recv 작업 결과 뒤 처리
 			if (overlappedEx->ioEvent == IOEvent::RECV)
 			{
-				OnRecv(session->sessionId, numOfBytes, session->recvBuffer);
-
-				// 클라이언트에 메세지를 에코한다.
-				RegisterSend(session, session->recvBuffer, numOfBytes);
-
-				// 다시 Recv Overlapped I/O 예약
-				RegisterRecv(session);
+				session->ProcessRecv(numOfBytes);
+				
+				OnRecv(session->GetSessionId(), numOfBytes, session->RecvBuffer());
 			}
-			// Overlapped I/O Send 작업 결과 뒤 처리
 			else if (overlappedEx->ioEvent == IOEvent::SEND)
 			{
-				OnSend(session->sessionId, numOfBytes, session->sendBuffer);
+				session->ProcessSend(numOfBytes);
+
+				// TODO : OverlappedEx 구조체를 삭제해줘야 한다. 지금은 재사용하지 않기 때문에
+				delete[] overlappedEx->wsaBuf.buf;
+				delete overlappedEx;
 			}
 			// 예외 상황
 			else
 			{
-				printf("socket(%d)에서 예외상황\n", (int)session->socket);
+				printf("socket(%d)에서 예외상황\n", (int)session->GetSocket());
 			}
 		}
 	}
@@ -302,21 +243,17 @@ private:
 			}
 
 			// 클라이언트 접속 요청이 들어올 때까지 기다린다.
-			session->socket = accept(_listenSocket, (SOCKADDR*)&clientAddr, &nAddrLen);
-			if (session->socket == INVALID_SOCKET)
+			SOCKET clientSocket = accept(_listenSocket, (SOCKADDR*)&clientAddr, &nAddrLen);
+			if (clientSocket == INVALID_SOCKET)
 				continue;
 
-			// I/O Completion Port객체와 소켓을 연결시킨다.
-			bool bRet = BindIOCP(session);
-			if (bRet == false)
+			if (session->Connect(_iocpHandle, clientSocket) == false)
+			{
+				session->Disconnect(true);
 				return;
+			}
 
-			// Recv Overlapped I/O작업을 요청해 놓는다.
-			bRet = RegisterRecv(session);
-			if (bRet == false)
-				return;
-
-			OnConnected(session->sessionId);
+			OnConnected(session->GetSessionId());
 
 			//클라이언트 갯수 증가
 			_clientCnt++;
@@ -326,24 +263,11 @@ private:
 	// 소켓의 연결을 종료 시킨다.
 	void CloseSocket(Session* session, bool isForce = false)
 	{
-		struct linger stLinger = { 0, 0 };	// SO_DONTLINGER로 설정
+		auto sessionId = session->GetSessionId();
 
-		// isForce가 true이면 SO_LINGER, timeout = 0으로 설정하여 강제 종료 시킨다. 주의 : 데이터 손실이 있을 수 있음
-		if (isForce)
-			stLinger.l_onoff = 1;
-		
-		// 소켓의 데이터 송수신을 모두 중단 시킨다.
-		shutdown(session->socket, SD_BOTH);
+		session->Disconnect(isForce);
 
-		// 소켓 옵션을 설정한다.
-		setsockopt(session->socket, SOL_SOCKET, SO_LINGER, (char*)&stLinger, sizeof(stLinger));
-
-		// 소켓 연결을 종료 시킨다.
-		closesocket(session->socket);
-
-		session->socket = INVALID_SOCKET;
-
-		OnDisconnected(session->sessionId);
+		OnDisconnected(sessionId);
 	}
 
 

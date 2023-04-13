@@ -143,6 +143,7 @@
     <ClInclude Include="Define.h" />
     <ClInclude Include="IOCP.h" />
     <ClInclude Include="Packet.h" />
+    <ClInclude Include="Session.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ChatServer.cpp" />

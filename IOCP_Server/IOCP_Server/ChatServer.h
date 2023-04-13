@@ -19,19 +19,12 @@ public:
 	}
 
 	virtual void OnRecv(const UINT32 sessionId, const UINT32 len, char* buf) override
-	{
-		printf("[荐脚] 技记 : %d, bytes : %d\n", sessionId, len);
-		
+	{	
 		Packet packet;
 		packet.Set(sessionId, len, buf);
 		
 		std::lock_guard<std::mutex> guard(_lock);
 		_packetQueue.push(packet);
-	}
-
-	virtual void OnSend(const UINT32 sessionId, const UINT32 len, char* buf) override
-	{
-		printf("[价脚] 技记 : %d, bytes : %d\n", sessionId, len);
 	}
 
 	void Run(const UINT32 maxClientCount)
@@ -64,6 +57,7 @@ private:
 			if (packet.packetSize != 0)
 			{
 				// Echo
+				Send(packet.sessionId, packet.packetSize - 8, packet.packetData);
 			}
 			else
 			{
