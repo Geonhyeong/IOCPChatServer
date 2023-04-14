@@ -1,5 +1,8 @@
 #include "ChatServer.h"
 
+#include <string>
+#include <iostream>
+
 const UINT16 SERVER_PORT = 2581;
 const UINT16 MAX_CLIENT = 100;
 
@@ -16,9 +19,17 @@ int main()
 	server.Run(MAX_CLIENT);
 
 	printf("아무 키나 누를 때까지 대기합니다.\n");
-	getchar();
+	while (true)
+	{
+		std::string inputCmd;
+		std::getline(std::cin, inputCmd);
+
+		if (inputCmd == "quit")
+		{
+			break;
+		}
+	}
 
 	server.End();
-
 	return 0;
 }

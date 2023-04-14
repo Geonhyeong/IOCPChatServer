@@ -112,8 +112,8 @@ public:
 
 	bool Send(const UINT32 sessionId, const UINT32 len, char* buf)
 	{
-		Session& session = _sessions[sessionId];
-		return session.RegisterSend(len, buf);
+		Session* session = _sessions[sessionId];
+		return session->Send(len, buf);
 	}
 
 	virtual void OnConnected(const UINT32 sessionId) = 0;
@@ -127,7 +127,7 @@ private:
 		for (UINT32 i = 0; i < maxClientCount; i++)
 		{
 			_sessions.emplace_back();
-			_sessions[i].Init(i);
+			_sessions[i]->Init(i);
 		}
 	}
 
@@ -158,8 +158,8 @@ private:
 	{
 		for (auto& session : _sessions)
 		{
-			if (session.IsConnected() == false)
-				return &session;
+			if (session->IsConnected() == false)
+				return session;
 		}
 
 		return nullptr;
@@ -272,7 +272,7 @@ private:
 
 
 private:
-	std::vector<Session>		_sessions;								// 클라이언트 정보 저장 구조체
+	std::vector<Session*>		_sessions;								// 클라이언트 정보 저장 구조체
 	SOCKET						_listenSocket = INVALID_SOCKET;			// 클라이언트의 접속을 받기 위한 리슨 소켓
 	int							_clientCnt = 0;							// 접속 되어있는 클라이언트 수
 	std::vector<std::thread>	_workerThreads;							// IO Worker 쓰레드
