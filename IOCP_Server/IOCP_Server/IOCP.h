@@ -15,8 +15,8 @@ public:
 		WSACleanup();
 	}
 	
-	// 소켓을 초기화하는 함수
-	bool InitSocket()
+	// 소켓 및 설정을 초기화하는 함수
+	bool Init(const UINT32 maxWorkerThreadCount)
 	{
 		WSADATA wsaData;
 
@@ -36,7 +36,9 @@ public:
 			return false;
 		}
 
-		printf("소켓 초기화 성공\n");
+		_maxWorkerThreadCount = maxWorkerThreadCount;
+
+		printf("서버 초기화 성공\n");
 		return true;
 	}
 
@@ -72,10 +74,17 @@ public:
 	{
 		CreateClient(maxClientCount);
 
-		_iocpHandle = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, NULL, MAX_WORKER_THREAD);
+		_iocpHandle = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, NULL, _maxWorkerThreadCount);
 		if (_iocpHandle == NULL)
 		{
 			printf("[에러] CreateIoCompletionPort()함수 실패 : %d\n", GetLastError());
+			return false;
+		}
+
+		auto iocpHandle = CreateIoCompletionPort((HANDLE)_listenSocket, _iocpHandle, 0, 0);
+		if (iocpHandle == NULL)
+		{
+			printf("[에러] listen socket IOCP bind 실패 : %d\n", GetLastError());
 			return false;
 		}
 
@@ -126,8 +135,10 @@ private:
 	{
 		for (UINT32 i = 0; i < maxClientCount; i++)
 		{
-			_sessions.emplace_back();
-			_sessions[i]->Init(i);
+			Session* session = new Session;
+			session->Init(i, _iocpHandle);
+
+			_sessions.push_back(session);
 		}
 	}
 
@@ -135,7 +146,7 @@ private:
 	bool CreateWorkerThread()
 	{
 		// 권장 개수 : (cpu개수 * 2) + 1
-		for (int i = 0; i < MAX_WORKER_THREAD; i++)
+		for (int i = 0; i < _maxWorkerThreadCount; i++)
 		{
 			_workerThreads.emplace_back([this]() { WorkerThread(); });
 		}
@@ -168,10 +179,11 @@ private:
 	// Overlapped I/O 작업에 대한 완료 통보를 받아 그에 해당하는 처리를 하는 함수
 	void WorkerThread()
 	{
-		Session* session = NULL;			// Key를 받을 포인터 변수
+		ULONG_PTR key = 0;				// Key를 받을 포인터 변수
 		bool bSuccess = TRUE;				// 함수 호출 성공 여부
 		DWORD numOfBytes = 0;				// Overlapped I/O 작업에서 전송된 데이터 크기
 		LPOVERLAPPED lpOverlapped = NULL;	// I/O 작업을 위해 요청한 Overlapped 구조체를 받을 포인터
+		Session* session = NULL;
 
 		while (_isWorkerRun)
 		{
@@ -183,7 +195,7 @@ private:
 				그리고 GetQueuedCompletionStatus()함수에 의해 사용자
 				메세지가 도착되면 쓰레드를 종료한다.
 			-------------------------------------------------------*/
-			bSuccess = GetQueuedCompletionStatus(_iocpHandle, &numOfBytes, (PULONG_PTR)&session, &lpOverlapped, INFINITE);
+			bSuccess = GetQueuedCompletionStatus(_iocpHandle, &numOfBytes, &key, &lpOverlapped, INFINITE);
 
 			// 사용자 쓰레드 종료 메세지 처리...
 			if (bSuccess == TRUE && numOfBytes == 0 && lpOverlapped == NULL)
@@ -195,16 +207,31 @@ private:
 			if (lpOverlapped == NULL)
 				continue;
 
+			OverlappedEx* overlappedEx = (OverlappedEx*)lpOverlapped;
+			session = _sessions[overlappedEx->sessionId];
+			
 			// client가 접속을 끊었을 때...
-			if (bSuccess == FALSE || (numOfBytes == 0 && bSuccess == TRUE))
+			if (bSuccess == FALSE || (numOfBytes == 0 && overlappedEx->ioEvent != IOEvent::ACCEPT))
 			{
 				CloseSocket(session);
 				continue;
 			}
 
-			OverlappedEx* overlappedEx = (OverlappedEx*)lpOverlapped;
+			if (overlappedEx->ioEvent == IOEvent::ACCEPT)
+			{
+				if (session->ProcessAccept())
+				{
+					OnConnected(session->GetSessionId());
 
-			if (overlappedEx->ioEvent == IOEvent::RECV)
+					//클라이언트 갯수 증가
+					_clientCnt++;
+				}
+				else
+				{
+					CloseSocket(session, true);
+				}
+			}
+			else if (overlappedEx->ioEvent == IOEvent::RECV)
 			{
 				session->ProcessRecv(numOfBytes);
 				
@@ -214,7 +241,7 @@ private:
 			{
 				session->ProcessSend(numOfBytes);
 
-				// TODO : OverlappedEx 구조체를 삭제해줘야 한다. 지금은 재사용하지 않기 때문에
+				// OverlappedEx 구조체를 삭제해줘야 한다. 지금은 재사용하지 않기 때문에
 				delete[] overlappedEx->wsaBuf.buf;
 				delete overlappedEx;
 			}
@@ -229,34 +256,23 @@ private:
 	// 사용자의 접속을 받는 쓰레드
 	void AcceptThread()
 	{
-		SOCKADDR_IN clientAddr;
-		int nAddrLen = sizeof(SOCKADDR_IN);
-
 		while (_isAcceptRun)
 		{
-			// 접속을 받을 구조체의 인덱스를 얻어온다.
-			Session* session = GetEmptySession();
-			if (session == NULL)
+			auto curTimeSec = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
+
+			for (auto& session : _sessions)
 			{
-				printf("[에러] Client Full\n");
-				return;
+				if (session->IsConnected())
+					continue;
+
+				auto diff = curTimeSec - session->GetLatestDisconnectedTimeSec();
+				if (diff <= REUSE_SESSION_WAIT_TIMESEC)
+					continue;
+
+				session->Accept(_listenSocket);
 			}
 
-			// 클라이언트 접속 요청이 들어올 때까지 기다린다.
-			SOCKET clientSocket = accept(_listenSocket, (SOCKADDR*)&clientAddr, &nAddrLen);
-			if (clientSocket == INVALID_SOCKET)
-				continue;
-
-			if (session->Connect(_iocpHandle, clientSocket) == false)
-			{
-				session->Disconnect(true);
-				return;
-			}
-
-			OnConnected(session->GetSessionId());
-
-			//클라이언트 갯수 증가
-			_clientCnt++;
+			std::this_thread::sleep_for(std::chrono::milliseconds(32));
 		}
 	}
 
@@ -272,13 +288,15 @@ private:
 
 
 private:
-	std::vector<Session*>		_sessions;								// 클라이언트 정보 저장 구조체
 	SOCKET						_listenSocket = INVALID_SOCKET;			// 클라이언트의 접속을 받기 위한 리슨 소켓
+	HANDLE						_iocpHandle = INVALID_HANDLE_VALUE;		// IOCP 객체 핸들
+	
+	std::vector<Session*>		_sessions;								// 클라이언트 정보 저장 구조체
 	int							_clientCnt = 0;							// 접속 되어있는 클라이언트 수
+
 	std::vector<std::thread>	_workerThreads;							// IO Worker 쓰레드
 	std::thread					_acceptThread;							// Accept 쓰레드
-	HANDLE						_iocpHandle = INVALID_HANDLE_VALUE;		// IOCP 객체 핸들
 	bool						_isWorkerRun = true;					// Worker 쓰레드 동작 플래그
 	bool						_isAcceptRun = true;					// Accept 쓰레드 동작 플래그
-	char						_socketBuf[1024] = { 0, };				// 소켓 버퍼
+	UINT32						_maxWorkerThreadCount = 0;
 };

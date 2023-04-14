@@ -4,18 +4,14 @@
 #include <iostream>
 
 const UINT16 SERVER_PORT = 2581;
-const UINT16 MAX_CLIENT = 100;
+const UINT16 MAX_CLIENT = 100;			// 접속 가능한 최대 클라이언트 수
+const UINT32 MAX_IO_WORKER_THREAD = 4;	// 쓰레드 풀에 넣을 쓰레드 수
 
 int main()
 {
 	ChatServer server;
-
-	// 소켓을 초기화
-	server.InitSocket();
-
-	// 소켓과 서버 주소를 연결하고 등록 시킨다.
+	server.Init(MAX_IO_WORKER_THREAD);
 	server.BindAndListen(SERVER_PORT);
-
 	server.Run(MAX_CLIENT);
 
 	printf("아무 키나 누를 때까지 대기합니다.\n");

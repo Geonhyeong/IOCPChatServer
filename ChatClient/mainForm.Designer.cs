@@ -104,7 +104,7 @@
             this.textBoxPort.Name = "textBoxPort";
             this.textBoxPort.Size = new System.Drawing.Size(51, 21);
             this.textBoxPort.TabIndex = 18;
-            this.textBoxPort.Text = "11021";
+            this.textBoxPort.Text = "2581";
             this.textBoxPort.WordWrap = false;
             // 
             // label10
