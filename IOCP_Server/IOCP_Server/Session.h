@@ -33,6 +33,10 @@ public:
 		if (IsConnected())
 			return false;
 
+		printf("Accept %d...\n", _sessionId);
+
+		_latestDisconnectedTimeSec = UINT32_MAX;
+
 		return RegisterAccept(listenSocket);
 	}
 
@@ -169,7 +173,7 @@ private:
 		_recvOverlappedEx.ioEvent = IOEvent::RECV;
 		_recvOverlappedEx.sessionId = _sessionId;
 
-		int nRet = WSARecv(_socket, &(_recvOverlappedEx.wsaBuf), 1, &numOfBytes, &flag, (LPWSAOVERLAPPED)&(_recvOverlappedEx), NULL);
+		int nRet = WSARecv(_socket, &(_recvOverlappedEx.wsaBuf), 1, &numOfBytes, &flag, (LPWSAOVERLAPPED)&_recvOverlappedEx, NULL);
 
 		// socket_error이면 client socket이 끊어진걸로 처리한다.
 		if (nRet == SOCKET_ERROR && (WSAGetLastError() != ERROR_IO_PENDING))

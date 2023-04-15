@@ -65,15 +65,6 @@ public:
 			return false;
 		}
 
-		printf("서버 등록 성공..\n");
-		return true;
-	}
-
-	// 접속 요청을 수락하고 메세지를 받아서 처리하는 함수
-	bool StartServer(const UINT32 maxClientCount)
-	{
-		CreateClient(maxClientCount);
-
 		_iocpHandle = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, NULL, _maxWorkerThreadCount);
 		if (_iocpHandle == NULL)
 		{
@@ -87,6 +78,15 @@ public:
 			printf("[에러] listen socket IOCP bind 실패 : %d\n", GetLastError());
 			return false;
 		}
+
+		printf("서버 등록 성공..\n");
+		return true;
+	}
+
+	// 접속 요청을 수락하고 메세지를 받아서 처리하는 함수
+	bool StartServer(const UINT32 maxClientCount)
+	{
+		CreateClient(maxClientCount);
 
 		bool bRet = CreateWorkerThread();
 		if (bRet == false)
@@ -240,10 +240,6 @@ private:
 			else if (overlappedEx->ioEvent == IOEvent::SEND)
 			{
 				session->ProcessSend(numOfBytes);
-
-				// OverlappedEx 구조체를 삭제해줘야 한다. 지금은 재사용하지 않기 때문에
-				delete[] overlappedEx->wsaBuf.buf;
-				delete overlappedEx;
 			}
 			// 예외 상황
 			else
@@ -263,6 +259,9 @@ private:
 			for (auto& session : _sessions)
 			{
 				if (session->IsConnected())
+					continue;
+
+				if ((UINT64)curTimeSec < session->GetLatestDisconnectedTimeSec())
 					continue;
 
 				auto diff = curTimeSec - session->GetLatestDisconnectedTimeSec();
