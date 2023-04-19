@@ -9,7 +9,7 @@ class IOCP
 {
 public:
 	IOCP() {}
-	~IOCP()
+	virtual ~IOCP()
 	{
 		// 윈속의 사용을 끝낸다.
 		WSACleanup();
@@ -133,7 +133,7 @@ public:
 private:
 	void CreateClient(const UINT32 maxClientCount)
 	{
-		for (UINT32 i = 0; i < maxClientCount; i++)
+		for (UINT32 i = 1; i <= maxClientCount; i++)
 		{
 			Session* session = new Session;
 			session->Init(i, _iocpHandle);

@@ -1,91 +1,56 @@
 #pragma once
 #include "IOCP.h"
 #include "Packet.h"
-
-#include <queue>
-#include <mutex>
+#include "PacketManager.h"
 
 class ChatServer : public IOCP
 {
 public:
+	ChatServer() = default;
+	virtual ~ChatServer() = default;
+
 	virtual void OnConnected(const UINT32 sessionId) override
 	{
-		printf("세션 (%d) 접속 성공\n", sessionId);
+		printf("[OnConnect] 클라이언트: Index(%d)\n", sessionId);
+
+		Packet packet{ sessionId, (UINT16)PACKET_ID::SYS_USER_CONNECT, 0 };
+		_packetManager->PushPacket(packet);
 	}
 
 	virtual void OnDisconnected(const UINT32 sessionId) override
 	{
-		printf("세션 (%d) 접속 끊김\n", sessionId);
+		printf("[OnDisconnected] 클라이언트: Index(%d)\n", sessionId);
+
+		Packet packet{ sessionId, (UINT16)PACKET_ID::SYS_USER_DISCONNECT, 0 };
+		_packetManager->PushPacket(packet);
 	}
 
 	virtual void OnRecv(const UINT32 sessionId, const UINT32 len, char* buf) override
 	{	
-		Packet packet;
-		packet.Set(sessionId, len, buf);
-		
-		std::lock_guard<std::mutex> guard(_lock);
-		_packetQueue.push(packet);
+		printf("[OnReceive] 클라이언트: Index(%d), dataSize(%d)\n", sessionId, len);
+
+		_packetManager->PushPacket(sessionId, len, buf);
 	}
 
 	void Run(const UINT32 maxClientCount)
 	{
-		_isProcessThread = true;
-		_processThread = std::thread([this]() { ProcessPacket(); });
+		// TODO
+		_packetManager = std::make_unique<PacketManager>();
+		_packetManager->Init(maxClientCount);
+		_packetManager->Run();
 
-		printf("패킷 쓰레드 시작...\n");
+		printf("패킷 매니저 쓰레드 시작...\n");
 
 		StartServer(maxClientCount);
 	}
 
 	void End()
 	{
-		_isProcessThread = false;
-
-		if (_processThread.joinable())
-			_processThread.join();
+		_packetManager->End();
 
 		DestroyThread();
 	}
 
-
 private:
-	void ProcessPacket()
-	{
-		while (_isProcessThread)
-		{
-			Packet packet = PopPacket();
-			if (packet.packetSize != 0)
-			{
-				// Echo
-				Send(packet.sessionId, packet.packetSize - 8, packet.packetData);
-			}
-			else
-			{
-				std::this_thread::sleep_for(std::chrono::milliseconds(1));
-			}
-		}
-	}
-
-	Packet PopPacket()
-	{
-		std::lock_guard<std::mutex> guard(_lock);
-
-		if (_packetQueue.empty())
-			return Packet();
-		
-		Packet packet;
-		packet.Set(_packetQueue.front());
-		
-		_packetQueue.front().Release();
-		_packetQueue.pop();
-
-		return packet;
-	}
-
-private:
-	bool				_isProcessThread = false;
-	std::thread			_processThread;
-
-	std::mutex			_lock;
-	std::queue<Packet>	_packetQueue;
+	std::unique_ptr<PacketManager> _packetManager;
 };

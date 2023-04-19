@@ -4,6 +4,9 @@
     <Filter Include="ServerCore">
       <UniqueIdentifier>{9da3d472-36e7-415f-8f21-9fa506f561e4}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Packet">
+      <UniqueIdentifier>{df729288-c8a7-47c4-9907-27ef9fc51fe0}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Define.h">
@@ -13,13 +16,20 @@
       <Filter>ServerCore</Filter>
     </ClInclude>
     <ClInclude Include="ChatServer.h" />
-    <ClInclude Include="Packet.h" />
     <ClInclude Include="Session.h">
       <Filter>ServerCore</Filter>
+    </ClInclude>
+    <ClInclude Include="Packet.h">
+      <Filter>Packet</Filter>
+    </ClInclude>
+    <ClInclude Include="PacketManager.h">
+      <Filter>Packet</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="ChatServer.cpp" />
+    <ClCompile Include="PacketManager.cpp">
+      <Filter>Packet</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

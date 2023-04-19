@@ -143,11 +143,12 @@
     <ClInclude Include="Define.h" />
     <ClInclude Include="IOCP.h" />
     <ClInclude Include="Packet.h" />
+    <ClInclude Include="PacketManager.h" />
     <ClInclude Include="Session.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ChatServer.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="PacketManager.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
