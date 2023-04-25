@@ -133,9 +133,9 @@ public:
 private:
 	void CreateClient(const UINT32 maxClientCount)
 	{
-		for (UINT32 i = 1; i <= maxClientCount; i++)
+		for (UINT32 i = 0; i < maxClientCount; i++)
 		{
-			Session* session = new Session;
+			Session* session = new Session();
 			session->Init(i, _iocpHandle);
 
 			_sessions.push_back(session);
@@ -233,9 +233,9 @@ private:
 			}
 			else if (overlappedEx->ioEvent == IOEvent::RECV)
 			{
-				session->ProcessRecv(numOfBytes);
-				
 				OnRecv(session->GetSessionId(), numOfBytes, session->RecvBuffer());
+				
+				session->ProcessRecv(numOfBytes);
 			}
 			else if (overlappedEx->ioEvent == IOEvent::SEND)
 			{

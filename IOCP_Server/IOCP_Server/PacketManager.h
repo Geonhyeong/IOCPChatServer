@@ -1,5 +1,6 @@
 #pragma once
 #include "Packet.h"
+#include "UserManager.h"
 
 #include <functional>
 #include <unordered_map>
@@ -19,19 +20,27 @@ public:
 	void	Run();
 	void	End();
 
-	void	PushPacket(Packet packet);
-	void	PushPacket(UINT32 userId, UINT32 packetSize, char* packet);
+	void	PushSystemPacket(PacketInfo systemPacket);
+	void	PushPacket(UINT32 sessionId, UINT32 packetSize, char* packet);
 
 private:
-	Packet	PopPacket();
-	void	ProcessPacket();
+	PacketInfo	PopPacket();
+	void		ProcessPacket();
+
+#pragma region HANDLER FUNCTION
+	void	ProcessUserConnect(UINT32 sessionId, UINT32 packetSize, char* packet);
+	void	ProcessUserDisconnect(UINT32 sessionId, UINT32 packetSize, char* packet);
+
+	void	ProcessEcho(UINT32 sessionId, UINT32 packetSize, char* packet);
+#pragma endregion
 
 private:
-	std::unordered_map<UINT16, PacketFunction> _packetFuncDict;
+	std::unordered_map<UINT16, PacketFunction>	_packetFuncDict;
+	std::unique_ptr<UserManager>				_userManager;
 
 	bool				_isProcessThread = false;
 	std::thread			_processThread;
 	
 	std::mutex			_lock;
-	std::queue<UINT32>	_packetUserIdQueue;
+	std::queue<UINT32>	_packetSessionIdQueue;
 };

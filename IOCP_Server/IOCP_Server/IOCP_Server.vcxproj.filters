@@ -7,6 +7,9 @@
     <Filter Include="Packet">
       <UniqueIdentifier>{df729288-c8a7-47c4-9907-27ef9fc51fe0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Contents">
+      <UniqueIdentifier>{cea0cd2e-121b-4db7-801a-c8fe5c0bd160}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Define.h">
@@ -25,11 +28,20 @@
     <ClInclude Include="PacketManager.h">
       <Filter>Packet</Filter>
     </ClInclude>
+    <ClInclude Include="User.h">
+      <Filter>Contents</Filter>
+    </ClInclude>
+    <ClInclude Include="UserManager.h">
+      <Filter>Contents</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="PacketManager.cpp">
       <Filter>Packet</Filter>
+    </ClCompile>
+    <ClCompile Include="User.cpp">
+      <Filter>Contents</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
