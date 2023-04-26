@@ -9,15 +9,13 @@ namespace ChatClient
     class PacketDef
     {
         public const Int16 PACKET_HEADER_SIZE = 5;
-        public const int MAX_USER_ID_BYTE_LENGTH = 33;
-        public const int MAX_USER_PW_BYTE_LENGTH = 33;
-        public const int MAX_CHAT_MSG_SIZE = 257;
+        public const int MAX_USER_ID_BYTE_LENGTH = 32;
+        public const int MAX_USER_PW_BYTE_LENGTH = 32;
+        public const int MAX_CHAT_MSG_SIZE = 256;
     }
 
     public enum PACKET_ID : ushort
     {
-        DEV_ECHO = 1,
-
         // 로그인
         LOGIN_REQ = 201,
         LOGIN_RES = 202,
@@ -34,6 +32,8 @@ namespace ChatClient
         ROOM_CHAT_REQ = 221,
         ROOM_CHAT_RES = 222,
         ROOM_CHAT_NOTIFY = 223,
+        
+        DEV_ECHO = 301,
     }
 
 

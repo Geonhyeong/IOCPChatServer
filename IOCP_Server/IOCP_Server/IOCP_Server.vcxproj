@@ -141,6 +141,7 @@
   <ItemGroup>
     <ClInclude Include="ChatServer.h" />
     <ClInclude Include="Define.h" />
+    <ClInclude Include="ErrorCode.h" />
     <ClInclude Include="IOCP.h" />
     <ClInclude Include="Packet.h" />
     <ClInclude Include="PacketManager.h" />

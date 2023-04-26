@@ -4,6 +4,23 @@ void User::Init(UINT32 sessionId)
 {
 	_sessionId = sessionId;
 	_ringBuffer = new char[USER_BUFFER_SIZE];
+	
+	curDomainState = USER_DOMAIN_STATE::NONE;
+}
+
+void User::Clear()
+{
+	_userId = "";
+	curDomainState = USER_DOMAIN_STATE::NONE;
+
+	_writePos = 0;
+	_readPos = 0;
+}
+
+void User::Login(std::string userId)
+{
+	_userId = userId;
+	curDomainState = USER_DOMAIN_STATE::LOGIN;
 }
 
 void User::PushPacket(UINT32 packetSize, char* packet)

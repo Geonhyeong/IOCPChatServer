@@ -12,8 +12,10 @@ enum class PACKET_ID : UINT16
 	// DB
 
 	// CONTENT
-	CHAT_ECHO_REQUEST = 301,
-	CHAT_ECHO_RESPONSE = 302,
+	LOGIN_REQUEST = 201,
+	LOGIN_RESPONSE = 202,
+
+	CHAT_ECHO = 301,
 };
 
 // 클라이언트가 보낸 패킷을 Wrapping 하는 구조체
@@ -43,16 +45,25 @@ const UINT32 PACKET_HEADER_SIZE = sizeof(PACKET_HEADER);
 #pragma endregion
 
 #pragma region CONTENT
-const UINT32 MAX_CHAT_MSG_SIZE = 256;
-struct CHAT_ECHO_REQUEST_PACKET : public PACKET_HEADER
+const int MAX_USER_ID_LEN = 32;
+const int MAX_USER_PW_LEN = 32;
+struct LOGIN_REQUEST_PACKET : public PACKET_HEADER
+{
+	char userId[MAX_USER_ID_LEN];
+	char password[MAX_USER_PW_LEN];
+};
+
+struct LOGIN_RESPONSE_PACKET : public PACKET_HEADER
+{
+	UINT16 resultCode;
+};
+
+const int MAX_CHAT_MSG_SIZE = 256;
+struct CHAT_ECHO_PACKET : public PACKET_HEADER
 {
 	char chatMsg[MAX_CHAT_MSG_SIZE] = { 0, };
 };
 
-struct CHAT_ECHO_RESPONSE_PACKET : public PACKET_HEADER
-{
-	char echoMsg[MAX_CHAT_MSG_SIZE] = { 0, 1 };
-};
 #pragma endregion
 
 #pragma pack(pop)
