@@ -14,10 +14,11 @@ public:
 	void Init(const UINT32 maxUserCount)
 	{
 		_maxUserCount = maxUserCount;
-		_users.assign(maxUserCount, new User());
+		_users.assign(maxUserCount, NULL);
 
 		for (UINT32 i = 0; i < maxUserCount; i++)
 		{
+			_users[i] = new User();
 			_users[i]->Init(i);
 		}
 	}

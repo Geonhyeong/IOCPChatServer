@@ -1,10 +1,11 @@
 #include "PacketManager.h"
 #include "ErrorCode.h"
 
-void PacketManager::Init(const UINT32 maxClientCount)
+void PacketManager::Init(const UINT32 maxClientCount, std::function<void(UINT32, UINT16, char*)> sendPacketFunc)
 {
 	_userManager = std::make_unique<UserManager>();
 	_userManager->Init(maxClientCount);
+	_sendPacketFunc = sendPacketFunc;
 
 	_packetFuncDict = std::unordered_map<UINT16, PacketFunction>();
 	// 함수자 할당
@@ -91,21 +92,21 @@ void PacketManager::ProcessPacket()
 }
 
 #pragma region HANDLER FUNCTION
-void PacketManager::ProcessUserConnect(UINT32 sessionId, UINT32 packetSize, char* packet)
+void PacketManager::ProcessUserConnect(UINT32 sessionId, UINT16 packetSize, char* packet)
 {
 	printf("[ProcessUserConnect] 클라이언트: sessionId(%d)\n", sessionId);
 
 	_userManager->ConnectUser(sessionId);
 }
 
-void PacketManager::ProcessUserDisconnect(UINT32 sessionId, UINT32 packetSize, char* packet)
+void PacketManager::ProcessUserDisconnect(UINT32 sessionId, UINT16 packetSize, char* packet)
 {
 	printf("[ProcessUserDisconnect] 클라이언트: sessionId(%d)\n", sessionId);
 
 	_userManager->DisconnectUser(sessionId);
 }
 
-void PacketManager::ProcessLogin(UINT32 sessionId, UINT32 packetSize, char* packet)
+void PacketManager::ProcessLogin(UINT32 sessionId, UINT16 packetSize, char* packet)
 {
 	printf("[ProcessLogin] 클라이언트: sessionId(%d)\n", sessionId);
 
@@ -119,7 +120,7 @@ void PacketManager::ProcessLogin(UINT32 sessionId, UINT32 packetSize, char* pack
 	if (packetSize != loginReqPacket->packetSize)
 	{
 		loginResPacket.resultCode = (UINT16)ERROR_CODE::INVALID_PACKET;
-		// TODO : SEND
+		_sendPacketFunc(sessionId, loginResPacket.packetSize, (char*)&loginResPacket);
 		return;
 	}
 	
@@ -128,33 +129,33 @@ void PacketManager::ProcessLogin(UINT32 sessionId, UINT32 packetSize, char* pack
 	if (_userManager->GetCurrentUserCount() >= _userManager->GetMaxUserCount())
 	{
 		loginResPacket.resultCode = (UINT16)ERROR_CODE::LOGIN_USED_ALL_OBJ;
-		// TODO : SEND
+		_sendPacketFunc(sessionId, loginResPacket.packetSize, (char*)&loginResPacket);
 		return;
 	}
 
 	if (_userManager->IsAlreadyLogin(loginReqPacket->userId))
 	{
 		loginResPacket.resultCode = (UINT16)ERROR_CODE::LOGIN_REDUNDANT_CONNECTION;
-		// TODO : SEND
+		_sendPacketFunc(sessionId, loginResPacket.packetSize, (char*)&loginResPacket);
 		return;
 	}
 
 	_userManager->LoginUser(sessionId, loginReqPacket->userId);
 	loginResPacket.resultCode = (UINT16)ERROR_CODE::LOGIN_SUCCESS;
-	// TODO : SEND
+	_sendPacketFunc(sessionId, loginResPacket.packetSize, (char*)&loginResPacket);
 }
 
-void PacketManager::ProcessEcho(UINT32 sessionId, UINT32 packetSize, char* packet)
+void PacketManager::ProcessEcho(UINT32 sessionId, UINT16 packetSize, char* packet)
 {
 	auto echoPacket = reinterpret_cast<CHAT_ECHO_PACKET*>(packet);
 
 	if (packetSize != echoPacket->packetSize)
 		return;
 
+	_sendPacketFunc(sessionId, echoPacket->packetSize, (char*)echoPacket);
+
 	echoPacket->chatMsg[packetSize - PACKET_HEADER_SIZE] = '\0';
 	printf("[Echo] 클라이언트: sessionId(%d) 메시지: %s\n", sessionId, echoPacket->chatMsg);
-
-	// TODO : SEND
 }
 
 #pragma endregion

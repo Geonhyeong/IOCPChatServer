@@ -3,6 +3,8 @@
 #include "Packet.h"
 #include "PacketManager.h"
 
+#include <functional>
+
 class ChatServer : public IOCP
 {
 public:
@@ -34,9 +36,13 @@ public:
 
 	void Run(const UINT32 maxClientCount)
 	{
-		// TODO
+		auto sendPacketFunc	= [&](UINT32 sessionId, UINT16 packetSize, char* packet) 
+		{ 
+			Send(sessionId, packetSize, packet); 
+		};
+
 		_packetManager = std::make_unique<PacketManager>();
-		_packetManager->Init(maxClientCount);
+		_packetManager->Init(maxClientCount, sendPacketFunc);
 		_packetManager->Run();
 
 		printf("패킷 매니저 쓰레드 시작...\n");
@@ -53,4 +59,6 @@ public:
 
 private:
 	std::unique_ptr<PacketManager> _packetManager;
+
+	std::function<void(UINT32, UINT32, char*)> _sendFunc;
 };
