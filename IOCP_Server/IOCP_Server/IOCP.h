@@ -146,7 +146,7 @@ private:
 	bool CreateWorkerThread()
 	{
 		// 권장 개수 : (cpu개수 * 2) + 1
-		for (int i = 0; i < _maxWorkerThreadCount; i++)
+		for (UINT32 i = 0; i < _maxWorkerThreadCount; i++)
 		{
 			_workerThreads.emplace_back([this]() { WorkerThread(); });
 		}

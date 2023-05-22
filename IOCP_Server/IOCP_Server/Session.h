@@ -33,7 +33,7 @@ public:
 		if (IsConnected())
 			return false;
 
-		printf("Accept %d...\n", _sessionId);
+		//printf("Accept %d...\n", _sessionId);
 
 		_latestDisconnectedTimeSec = UINT32_MAX;
 
@@ -113,14 +113,14 @@ public:
 
 	void ProcessRecv(const UINT32 len)
 	{
-		printf("[荐脚] 技记 : %d, bytes : %d\n", _sessionId, len);
+		//printf("[荐脚] 技记 : %d, bytes : %d\n", _sessionId, len);
 
 		RegisterRecv();
 	}
 
 	void ProcessSend(const UINT32 len)
 	{
-		printf("[价脚] 技记 : %d, bytes : %d\n", _sessionId, len);
+		//printf("[价脚] 技记 : %d, bytes : %d\n", _sessionId, len);
 
 		std::lock_guard<std::mutex> guard(_lock);
 

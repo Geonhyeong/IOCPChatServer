@@ -16,7 +16,7 @@ public:
 	PacketManager() = default;
 	~PacketManager() = default;
 
-	void	Init(const UINT32 maxClientCount, std::function<void(UINT32, UINT16, char*)> sendPacketFunc);
+	void	Init(const UINT32 maxClientCount, const std::function<void(UINT32, UINT16, char*)> sendPacketFunc);
 	void	Run();
 	void	End();
 
@@ -31,14 +31,15 @@ private:
 	void	ProcessUserConnect(UINT32 sessionId, UINT16 packetSize, char* packet);
 	void	ProcessUserDisconnect(UINT32 sessionId, UINT16 packetSize, char* packet);
 
-	void	ProcessLogin(UINT32 sessionId, UINT16 packetSize, char* packet);
 	void	ProcessEcho(UINT32 sessionId, UINT16 packetSize, char* packet);
+	void	ProcessChat(UINT32 sessionId, UINT16 packetSize, char* packet);
+	void	ProcessDelayCheck(UINT32 sessionId, UINT16 packetSize, char* packet);
 #pragma endregion
 
 private:
 	std::unordered_map<UINT16, PacketFunction>	_packetFuncDict;
-	std::unique_ptr<UserManager>				_userManager;
 	std::function<void(UINT32, UINT16, char*)>	_sendPacketFunc;
+	std::unique_ptr<UserManager>				_userManager;
 
 	bool				_isProcessThread = false;
 	std::thread			_processThread;

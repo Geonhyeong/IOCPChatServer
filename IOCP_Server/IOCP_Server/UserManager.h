@@ -4,6 +4,7 @@
 #include <vector>
 #include <unordered_map>
 #include <string>
+#include <functional>
 
 class UserManager
 {
@@ -40,30 +41,30 @@ public:
 		auto pUser = _users[sessionId];
 		if (pUser->curDomainState > User::USER_DOMAIN_STATE::DISCONNECT)
 		{
-			_userIdDict.erase(pUser->GetUserId());
 			pUser->Clear();
 
 			_userCount--;
 		}
 	}
 
-	void LoginUser(const UINT32 sessionId, std::string userId)
+	void BroadcastToConnectingUser(UINT32 senderId, UINT16 packetSize, char* packet)
 	{
-		auto pUser = _users[sessionId];
-		if (pUser->curDomainState == User::USER_DOMAIN_STATE::CONNECT)
+		// 현재로서는 packetManager도 싱글 쓰레드로 동작하고 userManager도 unique_ptr로 인해 싱글쓰레드로 동작한다.
+		int broadcastCnt = 0;
+		for (UINT32 i = 0; i < _maxUserCount; i++)
 		{
-			_userIdDict.insert(std::make_pair(userId, sessionId));
+			if (i == senderId)
+				continue;
 
-			_users[sessionId]->Login(userId);
+			auto pUser = _users[i];
+			if (pUser->curDomainState == User::USER_DOMAIN_STATE::CONNECT)
+			{
+				SendPacketFunc(i, packetSize, packet);
+				broadcastCnt++;
+			}
 		}
-	}
 
-	bool IsAlreadyLogin(char* userId)
-	{
-		if (_userIdDict.find(userId) != _userIdDict.end())
-			return true;
-
-		return false;
+		printf("Broacast to %d Users...", broadcastCnt);
 	}
 
 	User*	GetUserBySessionId(const UINT32 sessionId) { return _users[sessionId]; }
@@ -75,5 +76,7 @@ private:
 	UINT32				_maxUserCount = 0;
 	
 	std::vector<User*>	_users;
-	std::unordered_map<std::string, int> _userIdDict;
+
+public:
+	std::function<void(UINT32, UINT16, char*)>	SendPacketFunc;
 };

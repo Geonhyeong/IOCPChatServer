@@ -28,7 +28,7 @@ public:
 	PacketInfo	PopPacket();
 
 public:
-	USER_DOMAIN_STATE	curDomainState;
+	USER_DOMAIN_STATE	curDomainState = USER_DOMAIN_STATE::NONE;
 
 private:
 	UINT32				_sessionId;

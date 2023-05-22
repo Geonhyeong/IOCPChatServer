@@ -13,7 +13,7 @@ public:
 
 	virtual void OnConnected(const UINT32 sessionId) override
 	{
-		printf("[OnConnect] 클라이언트: sessionId(%d)\n", sessionId);
+		//printf("[OnConnect] 클라이언트: sessionId(%d)\n", sessionId);
 
 		PacketInfo packet{ sessionId, (UINT16)PACKET_ID::SYS_USER_CONNECT, 0 };
 		_packetManager->PushSystemPacket(packet);
@@ -21,7 +21,7 @@ public:
 
 	virtual void OnDisconnected(const UINT32 sessionId) override
 	{
-		printf("[OnDisconnected] 클라이언트: sessionId(%d)\n", sessionId);
+		//printf("[OnDisconnected] 클라이언트: sessionId(%d)\n", sessionId);
 
 		PacketInfo packet{ sessionId, (UINT16)PACKET_ID::SYS_USER_DISCONNECT, 0 };
 		_packetManager->PushSystemPacket(packet);
@@ -29,7 +29,7 @@ public:
 
 	virtual void OnRecv(const UINT32 sessionId, const UINT32 len, char* buf) override
 	{	
-		printf("[OnReceive] 클라이언트: sessionId(%d), dataSize(%d)\n", sessionId, len);
+		//printf("[OnReceive] 클라이언트: sessionId(%d), dataSize(%d)\n", sessionId, len);
 
 		_packetManager->PushPacket(sessionId, len, buf);
 	}
