@@ -14,9 +14,7 @@ void PacketManager::Init(const UINT32 maxClientCount, const std::function<void(U
 	_packetFuncDict[(UINT16)PACKET_ID::SYS_USER_CONNECT] = [this](UINT32 sessionId, UINT16 packetSize, char* packet) { return ProcessUserConnect(sessionId, packetSize, packet); };
 	_packetFuncDict[(UINT16)PACKET_ID::SYS_USER_DISCONNECT] = [this](UINT32 sessionId, UINT16 packetSize, char* packet) { return ProcessUserDisconnect(sessionId, packetSize, packet); };
 
-	_packetFuncDict[(UINT16)PACKET_ID::CHAT_ECHO] = [this](UINT32 sessionId, UINT16 packetSize, char* packet) { return ProcessEcho(sessionId, packetSize, packet); };
-	_packetFuncDict[(UINT16)PACKET_ID::C_CHAT] = [this](UINT32 sessionId, UINT16 packetSize, char* packet) { return ProcessChat(sessionId, packetSize, packet); };
-	_packetFuncDict[(UINT16)PACKET_ID::DELAY_CHECK] = [this](UINT32 sessionId, UINT16 packetSize, char* packet) { return ProcessDelayCheck(sessionId, packetSize, packet); };
+	_packetFuncDict[(UINT16)PACKET_ID::CHAT_REQ] = [this](UINT32 sessionId, UINT16 packetSize, char* packet) { return ProcessChat(sessionId, packetSize, packet); };
 }
 
 void PacketManager::Run()
@@ -113,44 +111,34 @@ void PacketManager::ProcessUserDisconnect(UINT32 sessionId, UINT16 packetSize, c
 	printf("현재 접속한 클라이언트 수 : %d\n", _userManager->GetCurrentUserCount());
 }
 
-void PacketManager::ProcessEcho(UINT32 sessionId, UINT16 packetSize, char* packet)
-{
-	auto echoPacket = reinterpret_cast<CHAT_ECHO_PACKET*>(packet);
-
-	if (packetSize != echoPacket->packetSize)
-		return;
-
-	_sendPacketFunc(sessionId, echoPacket->packetSize, (char*)echoPacket);
-
-	echoPacket->chatMsg[packetSize - PACKET_HEADER_SIZE] = '\0';
-	printf("[Echo] 클라이언트: sessionId(%d) 메시지: %s\n", sessionId, echoPacket->chatMsg);
-}
-
 void PacketManager::ProcessChat(UINT32 sessionId, UINT16 packetSize, char* packet)
 {
-	auto chatPacket = reinterpret_cast<C_CHAT_PACKET*>(packet);
+	CHAT_REQ_PACKET* chatReqPacket = reinterpret_cast<CHAT_REQ_PACKET*>(packet);
 
-	if (packetSize != chatPacket->packetSize)
+	if (packetSize != chatReqPacket->packetSize)
 		return;
 
-	S_CHAT_PACKET broadcastPacket;
-	broadcastPacket.packetSize = sizeof(S_CHAT_PACKET);
-	broadcastPacket.packetId = (UINT16)PACKET_ID::S_CHAT;
-	broadcastPacket.type = 0;
-	std::memcpy(broadcastPacket.nickname, chatPacket->nickname, MAX_NICKNAME_BYTE_LENGTH);
-	std::memcpy(broadcastPacket.chatMsg, chatPacket->chatMsg, MAX_CHAT_MSG_SIZE);
+	{
+		CHAT_BROADCAST_PACKET broadcastPacket;
+		broadcastPacket.packetSize = sizeof(CHAT_BROADCAST_PACKET);
+		broadcastPacket.packetId = (UINT16)PACKET_ID::CHAT_BROADCAST;
+		broadcastPacket.type = 0;
+		std::memcpy(broadcastPacket.nickname, chatReqPacket->nickname, MAX_NICKNAME_BYTE_LENGTH);
+		std::memcpy(broadcastPacket.chatMsg, chatReqPacket->chatMsg, MAX_CHAT_MSG_SIZE);
 
-	_userManager->BroadcastToConnectingUser(sessionId, broadcastPacket.packetSize, (char*)&broadcastPacket);
-}
+		_userManager->BroadcastToConnectingUser(sessionId, broadcastPacket.packetSize, (char*)&broadcastPacket);
+	}
 
-void PacketManager::ProcessDelayCheck(UINT32 sessionId, UINT16 packetSize, char* packet)
-{
-	auto delayCheckPacket = reinterpret_cast<PING_CHECK_PACKET*>(packet);
+	{
+		CHAT_RES_PACKET chatResPacket;
+		chatResPacket.packetSize = sizeof(CHAT_RES_PACKET);
+		chatResPacket.packetId = (UINT16)PACKET_ID::CHAT_RES;
+		chatResPacket.type = 0;
+		chatResPacket.result = (UINT16)ERROR_CODE::NONE;
+		chatResPacket.requestTimeTick = chatReqPacket->requestTimeTick;
 
-	if (packetSize != delayCheckPacket->packetSize)
-		return;
-
-	_sendPacketFunc(sessionId, delayCheckPacket->packetSize, (char*)delayCheckPacket);
+		_sendPacketFunc(sessionId, chatResPacket.packetSize, (char*)&chatResPacket);
+	}
 }
 
 #pragma endregion

@@ -15,11 +15,9 @@ enum class PACKET_ID : UINT16
 	LOGIN_REQUEST = 201,
 	LOGIN_RESPONSE = 202,
 
-	CHAT_ECHO = 301,
-	C_CHAT = 303,
-	S_CHAT = 304,
-
-	DELAY_CHECK = 505,
+	CHAT_REQ = 303,
+	CHAT_RES = 304,
+	CHAT_BROADCAST = 305,
 };
 
 // 클라이언트가 보낸 패킷을 Wrapping 하는 구조체
@@ -50,28 +48,25 @@ const UINT32 PACKET_HEADER_SIZE = sizeof(PACKET_HEADER);
 
 #pragma region CONTENT
 
-const int MAX_CHAT_MSG_SIZE = 256;
-struct CHAT_ECHO_PACKET : public PACKET_HEADER
-{
-	char chatMsg[MAX_CHAT_MSG_SIZE] = { 0, };
-};
-
 const int MAX_NICKNAME_BYTE_LENGTH = 32;
-struct C_CHAT_PACKET : public PACKET_HEADER
+const int MAX_CHAT_MSG_SIZE = 256;
+struct CHAT_REQ_PACKET : public PACKET_HEADER
 {
 	char nickname[MAX_NICKNAME_BYTE_LENGTH] = { 0, };
 	char chatMsg[MAX_CHAT_MSG_SIZE] = { 0, };
+	INT64 requestTimeTick;
 };
 
-struct S_CHAT_PACKET : public PACKET_HEADER
+struct CHAT_RES_PACKET : public PACKET_HEADER
+{
+	UINT16 result;
+	INT64 requestTimeTick;
+};
+
+struct CHAT_BROADCAST_PACKET : public PACKET_HEADER
 {
 	char nickname[MAX_NICKNAME_BYTE_LENGTH] = { 0, };
 	char chatMsg[MAX_CHAT_MSG_SIZE] = { 0, };
-};
-
-struct PING_CHECK_PACKET : public PACKET_HEADER
-{
-	INT64 CurrentTimeSpan;
 };
 #pragma endregion
 

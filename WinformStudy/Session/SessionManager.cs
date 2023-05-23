@@ -83,10 +83,11 @@ namespace WinformStudy
             {
                 foreach (DummySession dummySession in _dummies)
                 {
-                    dummySession.AutoSend = true;
                     dummySession.StartAutoChat();
                 }
             }
+
+            DevLog.Write("더미 자동채팅 시작...", LOG_LEVEL.INFO);
         }
 
         public void DummyAutoChatStop()
@@ -98,6 +99,8 @@ namespace WinformStudy
                     dummySession.AutoSend = false;
                 }
             }
+
+            DevLog.Write("더미 자동채팅 중지...", LOG_LEVEL.INFO);
         }
 
         public void SendFromHost(ArraySegment<byte> sendBuffer)

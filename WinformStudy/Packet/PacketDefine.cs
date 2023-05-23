@@ -27,13 +27,9 @@ namespace WinformStudy
         LOGIN_REQUEST = 201,
         LOGIN_RESPONSE = 202,
 
-
-        CHAT_ECHO = 301,
-        CHAT_TEST = 302,
-        C_CHAT = 303,
-        S_CHAT = 304,
-
-        DELAY_CHECK = 505,
+        CHAT_REQ = 303,
+        CHAT_RES = 304,
+        CHAT_BROADCAST = 305,
     }
 
     public enum ERROR_CODE : UInt16

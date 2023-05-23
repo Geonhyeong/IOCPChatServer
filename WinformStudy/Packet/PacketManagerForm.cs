@@ -12,8 +12,8 @@ namespace WinformStudy
 
         void InitPacketHandler()
         {
-            PacketFuncDict.Add(PACKET_ID.S_CHAT, Process_Chat);
-            PacketFuncDict.Add(PACKET_ID.DELAY_CHECK, Process_DelayCheck);
+            PacketFuncDict.Add(PACKET_ID.CHAT_RES, Process_ChatResponse);
+            PacketFuncDict.Add(PACKET_ID.CHAT_BROADCAST, Process_ChatBroadcast);
         }
 
         public static void ProcessPacket(PacketData packet)
@@ -27,24 +27,34 @@ namespace WinformStudy
         }
 
 #region PACKET HANDLER FUNCTION
-        private void Process_Chat(byte[] bodyData)
+        private void Process_ChatResponse(byte[] bodyData)
         {
-            S_ChatPacket chatPacket = new S_ChatPacket();
-            chatPacket.FromBytes(bodyData);
+            ChatResPacket chatResPacket = new ChatResPacket();
+            chatResPacket.FromBytes(bodyData);
 
-            string msg = $"{chatPacket.Nickname} > {chatPacket.Msg}";
-            RoomChatMsgQueue.Enqueue(msg);
+            var errCode = (ERROR_CODE)chatResPacket.Result;
+            if (errCode == ERROR_CODE.NONE)
+            {
+                long delayTicks = DateTime.Now.Ticks - chatResPacket.RequestTimeTick;
+                long delayTime = delayTicks / TimeSpan.TicksPerMillisecond;
+
+                DelayTimeQueue.Enqueue(delayTime);
+
+                DevLog.Write($"클라이언트의 채팅응답 패킷 수신", LOG_LEVEL.INFO);
+            }
+            else
+            {
+                DevLog.Write($"채팅 요청 결과: {errCode}", LOG_LEVEL.ERROR);
+            }
         }
 
-        private void Process_DelayCheck(byte[] bodyData)
+        private void Process_ChatBroadcast(byte[] bodyData)
         {
-            DelayCheckPacket delayCheckPacket = new DelayCheckPacket();
-            delayCheckPacket.FromBytes(bodyData);
+            ChatBroadcastPacket chatBroadcastPacket = new ChatBroadcastPacket();
+            chatBroadcastPacket.FromBytes(bodyData);
 
-            long delayTicks = DateTime.Now.Ticks - delayCheckPacket.CurrentTimeSpan;
-            delayTime = delayTicks / TimeSpan.TicksPerMillisecond;
-
-            DevLog.Write("DelayCheck 패킷 수신.", LOG_LEVEL.INFO);
+            string msg = $"{chatBroadcastPacket.Nickname} > {chatBroadcastPacket.Msg}";
+            RoomChatMsgQueue.Enqueue(msg);
         }
 #endregion
     }

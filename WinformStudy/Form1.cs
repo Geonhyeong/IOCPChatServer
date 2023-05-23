@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Windows.Forms;
 using System.Windows.Threading;
 
@@ -10,10 +11,9 @@ namespace WinformStudy
         private Connector connector = new Connector();
         private DispatcherTimer dispatcherUITimer;
 
-        private bool IsHostConnected = false;
         private bool IsBackgroundProcessRunning = false;
         private Queue<string> RoomChatMsgQueue = new Queue<string>();
-        private long delayTime = -1;
+        private Queue<long> DelayTimeQueue = new Queue<long>(5);
 
         public Form1()
         {
@@ -63,13 +63,10 @@ namespace WinformStudy
             connector.Connect(ip, port, () => { return SessionManager.Instance.GenerateHostSession(); });
             btnConnect.Enabled = false;
             btnDisconnect.Enabled = true;
-
-            IsHostConnected = true;
         }
 
         private void btnDisconnect_Click(object sender, EventArgs e)
         {
-            IsHostConnected = false;
             SessionManager.Instance.RemoveHostSession();
 
             btnDisconnect.Enabled = false;
@@ -89,6 +86,9 @@ namespace WinformStudy
 
             connector.Connect(ip, port, () => { return SessionManager.Instance.GenerateDummySession(); }, addCount);
             textBoxDummyCount.Text = SessionManager.Instance.GetDummyCount().ToString();
+
+            if (btnDummyChatStart.Enabled == false)
+                SessionManager.Instance.DummyAutoChatStart();
         }
 
         private void btnDummyMinus_Click(object sender, EventArgs e)
@@ -163,23 +163,23 @@ namespace WinformStudy
                 return;
             }
 
-            C_ChatPacket chatPacket = new C_ChatPacket();
-            chatPacket.SetValue(textBoxUserName.Text, textBoxChatMessage.Text);
+            ChatReqPacket chatReqPacket = new ChatReqPacket();
+            chatReqPacket.SetValue(textBoxUserName.Text, textBoxChatMessage.Text, DateTime.Now.Ticks);
 
-            byte[] sendBuffer = PacketDef.MakeSendBuffer(PACKET_ID.C_CHAT, chatPacket.ToBytes());
+            byte[] sendBuffer = PacketDef.MakeSendBuffer(PACKET_ID.CHAT_REQ, chatReqPacket.ToBytes());
             SessionManager.Instance.SendFromHost(new ArraySegment<byte>(sendBuffer));
 
             string msg = $"{textBoxUserName.Text} > {textBoxChatMessage.Text}";
             RoomChatMsgQueue.Enqueue(msg);
 
-            textBoxChatMessage.Text = "";
+            //textBoxChatMessage.Text = "";
         }
 
         private void BackgroundWorker(object sender, EventArgs e)
         {
-            DelayCheck();
             ProcessLog();
             ProcessRoomChat();
+            DelayCheck();
         }
 
         private void ProcessLog()
@@ -247,15 +247,16 @@ namespace WinformStudy
 
         private void DelayCheck()
         {
-            if (IsBackgroundProcessRunning && IsHostConnected)
+            if (IsBackgroundProcessRunning&& DelayTimeQueue.Count > 0)
             {
-                DelayCheckPacket delayCheckPacket = new DelayCheckPacket();
-                delayCheckPacket.CurrentTimeSpan = DateTime.Now.Ticks;
+                while (DelayTimeQueue.Count() > 5)
+                    DelayTimeQueue.Dequeue();
 
-                byte[] sendBuffer = PacketDef.MakeSendBuffer(PACKET_ID.DELAY_CHECK, delayCheckPacket.ToBytes());
-                SessionManager.Instance.SendFromHost(new ArraySegment<byte>(sendBuffer));
-
-                labelDelayTime.Text = $"{delayTime} ms";
+                long sum = 0;
+                foreach (long delayTime in DelayTimeQueue)
+                    sum += delayTime;
+                
+                labelDelayTime.Text = $"{sum / DelayTimeQueue.Count()} ms";
             }
         }
     }

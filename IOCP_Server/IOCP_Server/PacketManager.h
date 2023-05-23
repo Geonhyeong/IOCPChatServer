@@ -31,9 +31,7 @@ private:
 	void	ProcessUserConnect(UINT32 sessionId, UINT16 packetSize, char* packet);
 	void	ProcessUserDisconnect(UINT32 sessionId, UINT16 packetSize, char* packet);
 
-	void	ProcessEcho(UINT32 sessionId, UINT16 packetSize, char* packet);
 	void	ProcessChat(UINT32 sessionId, UINT16 packetSize, char* packet);
-	void	ProcessDelayCheck(UINT32 sessionId, UINT16 packetSize, char* packet);
 #pragma endregion
 
 private:

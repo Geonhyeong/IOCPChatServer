@@ -36,18 +36,22 @@ namespace WinformStudy
 
         public void StartAutoChat()
         {
-            if (AutoSend)
-                worker.RunWorkerAsync();
+            if (AutoSend == false)
+            {
+                if (worker.IsBusy == false)
+                    worker.RunWorkerAsync();
+                AutoSend = true;
+            }
         }
 
         private void Work_Send(object sender, DoWorkEventArgs e)
         {
             while (AutoSend)
             {
-                C_ChatPacket chatPacket = new C_ChatPacket();
+                ChatReqPacket chatPacket = new ChatReqPacket();
                 chatPacket.SetValue(_nickname, ChatMessageGenerator.GenerateChatMessage());
 
-                byte[] sendBuffer = PacketDef.MakeSendBuffer(PACKET_ID.C_CHAT, chatPacket.ToBytes());
+                byte[] sendBuffer = PacketDef.MakeSendBuffer(PACKET_ID.CHAT_REQ, chatPacket.ToBytes());
                 Send(new ArraySegment<byte>(sendBuffer));
 
                 Thread.Sleep(random.Next(3, 6) * 1000);
