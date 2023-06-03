@@ -7,7 +7,7 @@ namespace WinformStudy
 {
     class DummySession : PacketSession
     {
-        public bool AutoSend = false;
+        private bool AutoSend = false;
         private string _nickname = "";
         Random random = new Random();
         BackgroundWorker worker = new BackgroundWorker();
@@ -16,14 +16,19 @@ namespace WinformStudy
         {
             _nickname = RandomNicknameGenerator.GenerateNickname();
 
-            //DevLog.Write($"Dummy({_nickname}) 서버 연결 완료.", LOG_LEVEL.INFO);
+            DevLog.Write($"Dummy({_nickname}) 서버 연결 완료.", LOG_LEVEL.INFO);
 
+            worker.WorkerReportsProgress = true;
+            worker.WorkerSupportsCancellation = true;
             worker.DoWork += new DoWorkEventHandler(Work_Send);
         }
 
         public override void OnDisconnected(EndPoint endPoint)
         {
-            //DevLog.Write($"Dummy({_nickname}) 서버 접속 끊김.", LOG_LEVEL.INFO);
+            DevLog.Write($"Dummy({_nickname}) 서버 접속 끊김.", LOG_LEVEL.INFO);
+
+            worker.Dispose();
+            worker = null;
         }
 
         public override void OnRecvPacket(ArraySegment<byte> buffer)
@@ -36,12 +41,17 @@ namespace WinformStudy
 
         public void StartAutoChat()
         {
-            if (AutoSend == false)
-            {
-                if (worker.IsBusy == false)
-                    worker.RunWorkerAsync();
-                AutoSend = true;
-            }
+            AutoSend = true;
+            if (worker != null && worker.IsBusy == false)
+                worker.RunWorkerAsync();
+        }
+
+        public void StopAutoChat()
+        {
+            AutoSend = false;
+
+            if (worker != null && worker.IsBusy)
+                worker.CancelAsync();
         }
 
         private void Work_Send(object sender, DoWorkEventArgs e)

@@ -46,7 +46,7 @@ namespace WinformStudy
         {
             IsBackgroundProcessRunning = false;
 
-
+            
         }
 
         private void checkBoxLocalHost_CheckedChanged(object sender, EventArgs e)

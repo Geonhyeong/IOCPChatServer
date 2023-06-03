@@ -34,7 +34,7 @@ public:
 		_packetManager->PushPacket(sessionId, len, buf);
 	}
 
-	void Run(const UINT32 maxClientCount)
+	void Run(const UINT32 maxClientCount, const UINT32 maxDBThreadCount)
 	{
 		auto sendPacketFunc	= [&](UINT32 sessionId, UINT16 packetSize, char* packet) 
 		{ 
@@ -43,7 +43,7 @@ public:
 
 		_packetManager = std::make_unique<PacketManager>();
 		_packetManager->Init(maxClientCount, sendPacketFunc);
-		_packetManager->Run();
+		_packetManager->Run(maxDBThreadCount);
 
 		printf("패킷 매니저 쓰레드 시작...\n");
 

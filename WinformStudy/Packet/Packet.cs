@@ -22,8 +22,8 @@ namespace WinformStudy
 
         public void SetValue(string nickname, string msg, Int64 timeSpan = 0)
         {
-            Encoding.UTF8.GetBytes(nickname).CopyTo(Nickname, 0);
-            Encoding.UTF8.GetBytes(msg).CopyTo(Msg, 0);
+            Encoding.Unicode.GetBytes(nickname).CopyTo(Nickname, 0);
+            Encoding.Unicode.GetBytes(msg).CopyTo(Msg, 0);
             RequestTimeTick = BitConverter.GetBytes(timeSpan);
         }
 
@@ -58,9 +58,9 @@ namespace WinformStudy
 
         public bool FromBytes(byte[] bodyData)
         {
-            Nickname = Encoding.UTF8.GetString(bodyData, 0, PacketDef.MAX_NICKNAME_BYTE_LENGTH);
+            Nickname = Encoding.Unicode.GetString(bodyData, 0, PacketDef.MAX_NICKNAME_BYTE_LENGTH);
             Nickname = Nickname.Trim().TrimEnd('\0');
-            Msg = Encoding.UTF8.GetString(bodyData, PacketDef.MAX_NICKNAME_BYTE_LENGTH, PacketDef.MAX_CHAT_MSG_SIZE);
+            Msg = Encoding.Unicode.GetString(bodyData, PacketDef.MAX_NICKNAME_BYTE_LENGTH, PacketDef.MAX_CHAT_MSG_SIZE);
             Msg = Msg.Trim().TrimEnd('\0');
 
             return true;

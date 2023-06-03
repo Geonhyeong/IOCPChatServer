@@ -9,7 +9,7 @@ public class ChatMessageGenerator
     public static string GenerateChatMessage()
     {
         StringBuilder sb = new StringBuilder();
-        int sentenceCount = Random.Next(1, 3); // 1에서 2개 사이의 문장 생성
+        int sentenceCount = 1;
 
         for (int i = 0; i < sentenceCount; i++)
         {
@@ -23,7 +23,7 @@ public class ChatMessageGenerator
     private static string GenerateSentence()
     {
         StringBuilder sb = new StringBuilder();
-        int wordCount = Random.Next(5, 10); // 5에서 9개 사이의 단어 생성
+        int wordCount = Random.Next(1, 3);
 
         for (int i = 0; i < wordCount; i++)
         {

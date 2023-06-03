@@ -143,6 +143,22 @@ private:
 			return false;
 		}
 
+		// SO_KEEPALIVE 옵션 설정
+		BOOL optval = TRUE;
+		setsockopt(_socket, SOL_SOCKET, SO_KEEPALIVE, (const char*)&optval, sizeof(BOOL));
+
+		tcp_keepalive sKA_Settings = { 0 };
+		sKA_Settings.onoff = 1;
+		sKA_Settings.keepalivetime = 5000;        // Keep Alive in 5 sec.
+		sKA_Settings.keepaliveinterval = 1000;        // Resend if No-Reply
+
+		DWORD dwBytes;
+		if (WSAIoctl(_socket, SIO_KEEPALIVE_VALS, &sKA_Settings, sizeof(sKA_Settings), 0, 0, &dwBytes, NULL, NULL) != 0)
+		{
+			printf("[에러] WSAIoctl()함수 SO_KEEPALIVE 옵션 설정 실패 : %d\n", WSAGetLastError());
+			return false;
+		}
+
 		DWORD bytes = 0;
 		DWORD flags = 0;
 		_acceptOverlappedEx.wsaBuf.len = 0;

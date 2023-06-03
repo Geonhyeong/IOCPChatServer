@@ -140,6 +140,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="ChatServer.h" />
+    <ClInclude Include="DBConnection.h" />
+    <ClInclude Include="DBConnectionPool.h" />
+    <ClInclude Include="DBInfo.h" />
     <ClInclude Include="Define.h" />
     <ClInclude Include="ErrorCode.h" />
     <ClInclude Include="IOCP.h" />

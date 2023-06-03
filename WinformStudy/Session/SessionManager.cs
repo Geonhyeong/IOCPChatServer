@@ -58,7 +58,7 @@ namespace WinformStudy
                 {
                     foreach (DummySession dummySession in _dummies)
                     {
-                        dummySession.AutoSend = false;
+                        dummySession.StopAutoChat();
                         dummySession.Disconnect();
                     }
 
@@ -68,7 +68,7 @@ namespace WinformStudy
                 {
                     for (int i = 0; i < count; i++)
                     {
-                        _dummies[i].AutoSend = false;
+                        _dummies[i].StopAutoChat();
                         _dummies[i].Disconnect();
                     }
 
@@ -96,7 +96,7 @@ namespace WinformStudy
             {
                 foreach (DummySession dummySession in _dummies)
                 {
-                    dummySession.AutoSend = false;
+                    dummySession.StopAutoChat();
                 }
             }
 

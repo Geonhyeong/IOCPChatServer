@@ -10,6 +10,9 @@
     <Filter Include="Contents">
       <UniqueIdentifier>{cea0cd2e-121b-4db7-801a-c8fe5c0bd160}</UniqueIdentifier>
     </Filter>
+    <Filter Include="DB">
+      <UniqueIdentifier>{482b65e4-28e7-403e-85f0-a32d59eaf097}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Define.h">
@@ -35,6 +38,15 @@
       <Filter>Contents</Filter>
     </ClInclude>
     <ClInclude Include="ErrorCode.h" />
+    <ClInclude Include="DBConnection.h">
+      <Filter>DB</Filter>
+    </ClInclude>
+    <ClInclude Include="DBConnectionPool.h">
+      <Filter>DB</Filter>
+    </ClInclude>
+    <ClInclude Include="DBInfo.h">
+      <Filter>DB</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />

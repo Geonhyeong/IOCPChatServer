@@ -5,6 +5,7 @@
 #include <WinSock2.h>
 #include <WS2tcpip.h>
 #include <MSWSock.h>
+#include <mstcpip.h>
 
 const UINT32 MAX_SOCKET_BUFFER = 1024;			// 패킷 크기
 const UINT64 REUSE_SESSION_WAIT_TIMESEC = 3;	// 소켓 재사용 대기시간

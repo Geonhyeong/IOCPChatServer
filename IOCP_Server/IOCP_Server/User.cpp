@@ -17,12 +17,6 @@ void User::Clear()
 	_readPos = 0;
 }
 
-void User::Login(std::string userId)
-{
-	_userId = userId;
-	curDomainState = USER_DOMAIN_STATE::LOGIN;
-}
-
 void User::PushPacket(UINT32 packetSize, char* packet)
 {
 	// lock이 필요 없는 이유

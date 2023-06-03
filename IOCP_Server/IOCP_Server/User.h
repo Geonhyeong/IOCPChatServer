@@ -20,7 +20,6 @@ public:
 public:
 	void Init(UINT32 sessionId);
 	void Clear();
-	void Login(std::string userId);
 
 	std::string			GetUserId() { return _userId; }
 
