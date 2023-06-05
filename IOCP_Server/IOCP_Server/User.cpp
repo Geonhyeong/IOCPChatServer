@@ -5,16 +5,22 @@ void User::Init(UINT32 sessionId)
 	_sessionId = sessionId;
 	_ringBuffer = new char[USER_BUFFER_SIZE];
 	
-	curDomainState = USER_DOMAIN_STATE::NONE;
+	_curDomainState = USER_DOMAIN_STATE::NONE;
 }
 
 void User::Clear()
 {
-	_userId = "";
-	curDomainState = USER_DOMAIN_STATE::NONE;
+	_curDomainState = USER_DOMAIN_STATE::NONE;
+	_pingCount = 0;
 
 	_writePos = 0;
 	_readPos = 0;
+}
+
+void User::Connect()
+{
+	_curDomainState = USER_DOMAIN_STATE::CONNECT;
+	_pingCount = 0;
 }
 
 void User::PushPacket(UINT32 packetSize, char* packet)

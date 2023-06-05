@@ -30,6 +30,9 @@ namespace WinformStudy
         CHAT_REQ = 303,
         CHAT_RES = 304,
         CHAT_BROADCAST = 305,
+
+        PING = 808,
+        PONG = 809,
     }
 
     public enum ERROR_CODE : UInt16

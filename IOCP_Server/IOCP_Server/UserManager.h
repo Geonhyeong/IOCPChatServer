@@ -27,10 +27,10 @@ public:
 	void ConnectUser(const UINT32 sessionId)
 	{
 		auto pUser = _users[sessionId];
-		if (pUser->curDomainState <= User::USER_DOMAIN_STATE::DISCONNECT)
+		if (pUser->GetCurrentDomainState() <= User::USER_DOMAIN_STATE::DISCONNECT)
 		{
 			pUser->Clear();
-			pUser->curDomainState = User::USER_DOMAIN_STATE::CONNECT;
+			pUser->Connect();
 
 			_userCount++;
 		}
@@ -39,7 +39,7 @@ public:
 	void DisconnectUser(const UINT32 sessionId)
 	{
 		auto pUser = _users[sessionId];
-		if (pUser->curDomainState > User::USER_DOMAIN_STATE::DISCONNECT)
+		if (pUser->GetCurrentDomainState() > User::USER_DOMAIN_STATE::DISCONNECT)
 		{
 			pUser->Clear();
 
@@ -57,7 +57,7 @@ public:
 				continue;
 
 			auto pUser = _users[i];
-			if (pUser->curDomainState == User::USER_DOMAIN_STATE::CONNECT)
+			if (pUser->GetCurrentDomainState() == User::USER_DOMAIN_STATE::CONNECT)
 			{
 				SendPacketFunc(i, packetSize, packet);
 				broadcastCnt++;

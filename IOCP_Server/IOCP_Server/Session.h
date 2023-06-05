@@ -85,9 +85,26 @@ public:
 		return true;
 	}
 
-	bool ProcessAccept()
+	bool ProcessAccept(SOCKET listenSocket)
 	{
 		_isConnected = true;
+
+		// SO_KEEPALIVE 옵션 설정
+		BOOL optval = TRUE;
+		setsockopt(_socket, SOL_SOCKET, SO_UPDATE_ACCEPT_CONTEXT, (const char*)&listenSocket, sizeof(SOCKET));
+		setsockopt(_socket, SOL_SOCKET, SO_KEEPALIVE, (const char*)&optval, sizeof(BOOL));
+
+		tcp_keepalive sKA_Settings = { 0 };
+		sKA_Settings.onoff = 1;
+		sKA_Settings.keepalivetime = 5000;        // Keep Alive in 5 sec.
+		sKA_Settings.keepaliveinterval = 1000;        // Resend if No-Reply
+
+		DWORD dwBytes;
+		if (WSAIoctl(_socket, SIO_KEEPALIVE_VALS, &sKA_Settings, sizeof(sKA_Settings), 0, 0, &dwBytes, NULL, NULL) == SOCKET_ERROR)
+		{
+			printf("[에러] WSAIoctl()함수 SO_KEEPALIVE 옵션 설정 실패 : %d\n", WSAGetLastError());
+			return false;
+		}
 
 		// IOCP 객체와 소켓을 연결시킨다.
 		auto iocpHandle = CreateIoCompletionPort((HANDLE)_socket, _iocpHandle, 0, 0);
@@ -101,12 +118,15 @@ public:
 		if (RegisterRecv() == false)
 			return false;
 
-		SOCKADDR_IN clientAddr;
-		int addrLen = sizeof(SOCKADDR_IN);
-		char clientIP[32] = { 0, };
-		inet_ntop(AF_INET, &(clientAddr.sin_addr), clientIP, 32 - 1);
-		
-		printf("클라이언트 접속 : IP(%s) SOCKET(%d)\n", clientIP, (int)_socket);
+		// 클라이언트 IP와 Port 출력
+		PSOCKADDR pRemoteSocketAddr = nullptr;
+		PSOCKADDR pLocalSocketAddr = nullptr;
+		int pRemoteSocketAddrLen = 0;
+		int pLocalSocketAddrLen = 0;
+		GetAcceptExSockaddrs(_acceptBuffer, 0, sizeof(SOCKADDR_IN) + 16, sizeof(SOCKADDR_IN) + 16, &pLocalSocketAddr, &pLocalSocketAddrLen, &pRemoteSocketAddr, &pRemoteSocketAddrLen);
+
+		SOCKADDR_IN remoteAddr = *(reinterpret_cast<PSOCKADDR_IN>(pRemoteSocketAddr));
+		printf("클라이언트 접속 IP(%s), Port(%d)\n", inet_ntoa(remoteAddr.sin_addr), ntohs(remoteAddr.sin_port));
 
 		return true;
 	}
@@ -140,22 +160,6 @@ private:
 		if (_socket == INVALID_SOCKET)
 		{
 			printf("[에러] WSASocket()함수 실패 : %d\n", GetLastError());
-			return false;
-		}
-
-		// SO_KEEPALIVE 옵션 설정
-		BOOL optval = TRUE;
-		setsockopt(_socket, SOL_SOCKET, SO_KEEPALIVE, (const char*)&optval, sizeof(BOOL));
-
-		tcp_keepalive sKA_Settings = { 0 };
-		sKA_Settings.onoff = 1;
-		sKA_Settings.keepalivetime = 5000;        // Keep Alive in 5 sec.
-		sKA_Settings.keepaliveinterval = 1000;        // Resend if No-Reply
-
-		DWORD dwBytes;
-		if (WSAIoctl(_socket, SIO_KEEPALIVE_VALS, &sKA_Settings, sizeof(sKA_Settings), 0, 0, &dwBytes, NULL, NULL) != 0)
-		{
-			printf("[에러] WSAIoctl()함수 SO_KEEPALIVE 옵션 설정 실패 : %d\n", WSAGetLastError());
 			return false;
 		}
 

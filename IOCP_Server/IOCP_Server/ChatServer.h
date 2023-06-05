@@ -41,8 +41,13 @@ public:
 			Send(sessionId, packetSize, packet); 
 		};
 
+		auto disconnectFunc = [&](UINT32 sessionId)
+		{
+			Disconnect(sessionId);
+		};
+
 		_packetManager = std::make_unique<PacketManager>();
-		_packetManager->Init(maxClientCount, sendPacketFunc);
+		_packetManager->Init(maxClientCount, sendPacketFunc, disconnectFunc);
 		_packetManager->Run(maxDBThreadCount);
 
 		printf("패킷 매니저 쓰레드 시작...\n");
@@ -59,6 +64,4 @@ public:
 
 private:
 	std::unique_ptr<PacketManager> _packetManager;
-
-	std::function<void(UINT32, UINT32, char*)> _sendFunc;
 };

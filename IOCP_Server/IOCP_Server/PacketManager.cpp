@@ -1,7 +1,7 @@
 #include "PacketManager.h"
 #include "ErrorCode.h"
 
-void PacketManager::Init(const UINT32 maxClientCount, const std::function<void(UINT32, UINT16, char*)> sendPacketFunc)
+void PacketManager::Init(const UINT32 maxClientCount, const std::function<void(UINT32, UINT16, char*)> sendPacketFunc, const std::function<void(UINT32)> disconnectFunc)
 {
 	// DBConnectionPool 생성
 	_dbConnectionPool = std::make_unique<DBConnectionPool>();
@@ -12,12 +12,14 @@ void PacketManager::Init(const UINT32 maxClientCount, const std::function<void(U
 	_userManager->SendPacketFunc = sendPacketFunc;	// TEMP
 
 	_sendPacketFunc = sendPacketFunc;
+	_disconnectFunc = disconnectFunc;
 	_packetFuncDict = std::unordered_map<UINT16, PacketFunction>();
 	// 함수자 할당
 	_packetFuncDict[(UINT16)PACKET_ID::SYS_USER_CONNECT] = [this](UINT32 sessionId, UINT16 packetSize, char* packet) { return ProcessUserConnect(sessionId, packetSize, packet); };
 	_packetFuncDict[(UINT16)PACKET_ID::SYS_USER_DISCONNECT] = [this](UINT32 sessionId, UINT16 packetSize, char* packet) { return ProcessUserDisconnect(sessionId, packetSize, packet); };
 
 	_packetFuncDict[(UINT16)PACKET_ID::CHAT_REQ] = [this](UINT32 sessionId, UINT16 packetSize, char* packet) { return ProcessChat(sessionId, packetSize, packet); };
+	_packetFuncDict[(UINT16)PACKET_ID::PONG] = [this](UINT32 sessionId, UINT16 packetSize, char* packet) { return ProcessPong(sessionId, packetSize, packet); };
 }
 
 void PacketManager::Run(const UINT32 maxDBThreadCount)
@@ -29,7 +31,7 @@ void PacketManager::Run(const UINT32 maxDBThreadCount)
 		ASSERT_CRASH(dbConnection->Execute(DB_CREATE_TABLE_QUERY));
 		_dbConnectionPool->Push(dbConnection);
 	}
-	if (bool TRUNCATE_TABLE = true)
+	if (bool TRUNCATE_TABLE = false)
 	{
 		DBConnection* dbConnection = _dbConnectionPool->Pop();
 		ASSERT_CRASH(dbConnection->Execute(DB_TRUNCATE_TABLE_QUERY));
@@ -37,16 +39,17 @@ void PacketManager::Run(const UINT32 maxDBThreadCount)
 	}
 
 	_isProcessThread = true;
-	_processThread = std::thread([this]() { ProcessPacket(); });
+	_packetThread = std::thread([this]() { ProcessPacket(); });
 	_dbThread = std::thread([this]() { ProcessDB(); });
+	//_pingThread = std::thread([this]() { ProcessPing(); });
 }
 
 void PacketManager::End()
 {
 	_isProcessThread = false;
 
-	if (_processThread.joinable())
-		_processThread.join();
+	if (_packetThread.joinable())
+		_packetThread.join();
 
 	if (_dbThread.joinable())
 		_dbThread.join();
@@ -180,6 +183,34 @@ void PacketManager::ProcessDB()
 	_dbConnectionPool->Push(dbConnection);
 }
 
+void PacketManager::ProcessPing()
+{
+	while (_isProcessThread)
+	{
+		PING_PACKET pingPacket;
+		pingPacket.packetId = (UINT16)PACKET_ID::PING;
+		pingPacket.packetSize = PACKET_HEADER_SIZE;
+		pingPacket.type = 0;
+
+		for (UINT32 i = 0; i < _userManager->GetMaxUserCount(); i++)
+		{
+			auto pUser = _userManager->GetUserBySessionId(i);
+			if (pUser->GetCurrentDomainState() == User::USER_DOMAIN_STATE::CONNECT)
+			{
+				if (pUser->AddPingCount() > 3)
+				{
+					_disconnectFunc(i);
+					continue;
+				}
+				
+				_sendPacketFunc(i, pingPacket.packetSize, (char*)&pingPacket);
+			}
+		}
+
+		std::this_thread::sleep_for(std::chrono::seconds(5));
+	}
+}
+
 #pragma region HANDLER FUNCTION
 void PacketManager::ProcessUserConnect(UINT32 sessionId, UINT16 packetSize, char* packet)
 {
@@ -229,6 +260,12 @@ void PacketManager::ProcessChat(UINT32 sessionId, UINT16 packetSize, char* packe
 
 		_sendPacketFunc(sessionId, chatResPacket.packetSize, (char*)&chatResPacket);
 	}
+}
+
+void PacketManager::ProcessPong(UINT32 sessionId, UINT16 packetSize, char* packet)
+{
+	auto pUser = _userManager->GetUserBySessionId(sessionId);
+	pUser->ResetPingCount();
 }
 
 #pragma endregion

@@ -14,6 +14,7 @@ namespace WinformStudy
         {
             PacketFuncDict.Add(PACKET_ID.CHAT_RES, Process_ChatResponse);
             PacketFuncDict.Add(PACKET_ID.CHAT_BROADCAST, Process_ChatBroadcast);
+            PacketFuncDict.Add(PACKET_ID.PING, Process_Ping);
         }
 
         public static void ProcessPacket(PacketData packet)
@@ -55,6 +56,12 @@ namespace WinformStudy
 
             string msg = $"{chatBroadcastPacket.Nickname} > {chatBroadcastPacket.Msg}";
             RoomChatMsgQueue.Enqueue(msg);
+        }
+
+        private void Process_Ping(byte[] bodyData)
+        {
+            byte[] sendBuffer = PacketDef.MakeSendBuffer(PACKET_ID.PONG, bodyData);
+            SessionManager.Instance.SendFromHost(new ArraySegment<byte>(sendBuffer));
         }
 #endregion
     }

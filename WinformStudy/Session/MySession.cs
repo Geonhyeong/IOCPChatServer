@@ -87,7 +87,7 @@ namespace WinformStudy
 
             var packet = new PacketData();
             packet.packetSize = BitConverter.ToUInt16(buffer.Array, buffer.Offset);
-            packet.packetId= BitConverter.ToUInt16(buffer.Array, buffer.Offset + 2);
+            packet.packetId = BitConverter.ToUInt16(buffer.Array, buffer.Offset + 2);
             packet.type = (Byte)buffer.Array[(buffer.Offset + 4)];
             packet.bodyData = new byte[packet.packetSize - PacketDef.PACKET_HEADER_SIZE];
             Buffer.BlockCopy(buffer.Array, buffer.Offset + PacketDef.PACKET_HEADER_SIZE, packet.bodyData, 0, packet.packetSize - PacketDef.PACKET_HEADER_SIZE);

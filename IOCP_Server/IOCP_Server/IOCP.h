@@ -125,10 +125,15 @@ public:
 		return session->Send(len, buf);
 	}
 
+	void Disconnect(const UINT32 sessionId)
+	{
+		Session* session = _sessions[sessionId];
+		CloseSocket(session, true);
+	}
+
 	virtual void OnConnected(const UINT32 sessionId) = 0;
 	virtual void OnDisconnected(const UINT32 sessionId) = 0;
 	virtual void OnRecv(const UINT32 sessionId, const UINT32 len, char* buf) = 0;
-
 
 private:
 	void CreateClient(const UINT32 maxClientCount)
@@ -219,7 +224,7 @@ private:
 
 			if (overlappedEx->ioEvent == IOEvent::ACCEPT)
 			{
-				if (session->ProcessAccept())
+				if (session->ProcessAccept(_listenSocket))
 				{
 					OnConnected(session->GetSessionId());
 

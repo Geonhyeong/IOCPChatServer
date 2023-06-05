@@ -18,6 +18,9 @@ enum class PACKET_ID : UINT16
 	CHAT_REQ = 303,
 	CHAT_RES = 304,
 	CHAT_BROADCAST = 305,
+
+	PING = 808,
+	PONG = 809,
 };
 
 // 클라이언트가 보낸 패킷을 Wrapping 하는 구조체
@@ -36,7 +39,7 @@ struct PACKET_HEADER
 	UINT16 packetId;
 	UINT8 type;			// 압축 여부, 암호화 여부 등 속성을 알아내는 값
 };
-const UINT32 PACKET_HEADER_SIZE = sizeof(PACKET_HEADER);
+const UINT16 PACKET_HEADER_SIZE = sizeof(PACKET_HEADER);
 
 #pragma region SYSTEM
 
@@ -67,6 +70,14 @@ struct CHAT_BROADCAST_PACKET : public PACKET_HEADER
 {
 	char nickname[MAX_NICKNAME_BYTE_LENGTH] = { 0, };
 	char chatMsg[MAX_CHAT_MSG_SIZE] = { 0, };
+};
+
+struct PING_PACKET : public PACKET_HEADER
+{
+};
+
+struct PONG_PACKET : public PACKET_HEADER
+{
 };
 #pragma endregion
 
