@@ -131,9 +131,9 @@ namespace ChatLogViewer
             this.resultLabel.AutoSize = true;
             this.resultLabel.Location = new System.Drawing.Point(13, 745);
             this.resultLabel.Name = "resultLabel";
-            this.resultLabel.Size = new System.Drawing.Size(87, 12);
+            this.resultLabel.Size = new System.Drawing.Size(91, 12);
             this.resultLabel.TabIndex = 3;
-            this.resultLabel.Text = "검색결과 : 0 행";
+            this.resultLabel.Text = "검색 결과 : 0 행";
             // 
             // Form1
             // 
