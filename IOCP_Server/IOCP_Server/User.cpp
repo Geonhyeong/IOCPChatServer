@@ -26,7 +26,7 @@ void User::Connect()
 void User::PushPacket(UINT32 packetSize, char* packet)
 {
 	// lock이 필요 없는 이유
-	// - recv는 하나의 쓰레드에서만 실행됨.
+	// - recv는 한 번에 하나의 쓰레드에서만 실행됨.
 	// - 또한 링버퍼이기 때문에 읽고 쓰는데에 멀티쓰레드 이슈는 없다.
 	
 	// 링버퍼
