@@ -27,7 +27,7 @@ public:
 	void ConnectUser(const UINT32 sessionId)
 	{
 		auto pUser = _users[sessionId];
-		if (pUser->GetCurrentDomainState() <= User::USER_DOMAIN_STATE::DISCONNECT)
+		if (pUser->GetCurrentDomainState() <= USER_DOMAIN_STATE::DISCONNECT)
 		{
 			pUser->Clear();
 			pUser->Connect();
@@ -39,7 +39,7 @@ public:
 	void DisconnectUser(const UINT32 sessionId)
 	{
 		auto pUser = _users[sessionId];
-		if (pUser->GetCurrentDomainState() > User::USER_DOMAIN_STATE::DISCONNECT)
+		if (pUser->GetCurrentDomainState() > USER_DOMAIN_STATE::DISCONNECT)
 		{
 			pUser->Clear();
 
@@ -47,24 +47,28 @@ public:
 		}
 	}
 
-	void BroadcastToConnectingUser(UINT32 senderId, UINT16 packetSize, char* packet)
+	UINT16 LoginUser(const UINT32 sessionId, const char* userId)
 	{
-		// 현재로서는 packetManager도 싱글 쓰레드로 동작하고 userManager도 unique_ptr로 인해 싱글쓰레드로 동작한다.
-		int broadcastCnt = 0;
-		for (UINT32 i = 0; i < _maxUserCount; i++)
+		auto pUser = _users[sessionId];
+		if (pUser->GetCurrentDomainState() >= USER_DOMAIN_STATE::LOGIN)
+			return (UINT16)ERROR_CODE::LOGIN_REDUNDANT_CONNECTION;
+		
+		if (pUser->GetCurrentDomainState() == USER_DOMAIN_STATE::CONNECT)
 		{
-			if (i == senderId)
-				continue;
-
-			auto pUser = _users[i];
-			if (pUser->GetCurrentDomainState() == User::USER_DOMAIN_STATE::CONNECT)
-			{
-				SendPacketFunc(i, packetSize, packet);
-				broadcastCnt++;
-			}
+			pUser->Login(userId);
+			return (UINT16)ERROR_CODE::LOGIN_SUCCESS;
 		}
 
-		printf("Broacast to %d Users...", broadcastCnt);
+		return (UINT16)ERROR_CODE::LOGIN_USED_ALL_OBJ;
+	}
+
+	void LogoutUser(const UINT32 sessionId)
+	{
+		auto pUser = _users[sessionId];
+		if (pUser->GetCurrentDomainState() >= USER_DOMAIN_STATE::LOGIN)
+		{
+			pUser->Logout();
+		}
 	}
 
 	User*	GetUserBySessionId(const UINT32 sessionId) { return _users[sessionId]; }
@@ -76,7 +80,4 @@ private:
 	UINT32				_maxUserCount = 0;
 	
 	std::vector<User*>	_users;
-
-public:
-	std::function<void(UINT32, UINT16, char*)>	SendPacketFunc;
 };

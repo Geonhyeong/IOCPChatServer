@@ -1,25 +1,36 @@
 #include "PacketManager.h"
 #include "ErrorCode.h"
+#include <nlohmann/json.hpp>
 
-void PacketManager::Init(const UINT32 maxClientCount, const std::function<void(UINT32, UINT16, char*)> sendPacketFunc, const std::function<void(UINT32)> disconnectFunc)
+void PacketManager::Init(const UINT32 maxClientCount)
 {
+	// 함수자 할당
+	_packetFuncDict = std::unordered_map<UINT16, PacketFunction>();
+
+	_packetFuncDict[(UINT16)PACKET_ID::SYS_USER_CONNECT] = [this](UINT32 sessionId, UINT16 packetSize, char* packet) { return ProcessUserConnect(sessionId, packetSize, packet); };
+	_packetFuncDict[(UINT16)PACKET_ID::SYS_USER_DISCONNECT] = [this](UINT32 sessionId, UINT16 packetSize, char* packet) { return ProcessUserDisconnect(sessionId, packetSize, packet); };
+
+	_packetFuncDict[(UINT16)PACKET_ID::LOGIN_REQ] = [this](UINT32 sessionId, UINT16 packetSize, char* packet) { return ProcessLogin(sessionId, packetSize, packet); };
+	_packetFuncDict[(UINT16)PACKET_ID::LOGOUT_REQ] = [this](UINT32 sessionId, UINT16 packetSize, char* packet) { return ProcessLogout(sessionId, packetSize, packet); };
+	_packetFuncDict[(UINT16)PACKET_ID::ROOM_ENTER_REQ] = [this](UINT32 sessionId, UINT16 packetSize, char* packet) { return ProcessRoomEnter(sessionId, packetSize, packet); };
+	_packetFuncDict[(UINT16)PACKET_ID::ROOM_LEAVE_REQ] = [this](UINT32 sessionId, UINT16 packetSize, char* packet) { return ProcessRoomLeave(sessionId, packetSize, packet); };
+	_packetFuncDict[(UINT16)PACKET_ID::CHAT_REQ] = [this](UINT32 sessionId, UINT16 packetSize, char* packet) { return ProcessChat(sessionId, packetSize, packet); };
+	
 	// DBConnectionPool 생성
 	_dbConnectionPool = std::make_unique<DBConnectionPool>();
+
+	// RoomManager 생성 및 초기화
+	_roomManager = std::make_unique<RoomManager>();
+	_roomManager->SendPacketFunc = SendPacketFunc;
+	_roomManager->Init(1000, 100, 10);
 
 	// UserManager 생성 및 초기화
 	_userManager = std::make_unique<UserManager>();
 	_userManager->Init(maxClientCount);
-	_userManager->SendPacketFunc = sendPacketFunc;	// TEMP
 
-	_sendPacketFunc = sendPacketFunc;
-	_disconnectFunc = disconnectFunc;
-	_packetFuncDict = std::unordered_map<UINT16, PacketFunction>();
-	// 함수자 할당
-	_packetFuncDict[(UINT16)PACKET_ID::SYS_USER_CONNECT] = [this](UINT32 sessionId, UINT16 packetSize, char* packet) { return ProcessUserConnect(sessionId, packetSize, packet); };
-	_packetFuncDict[(UINT16)PACKET_ID::SYS_USER_DISCONNECT] = [this](UINT32 sessionId, UINT16 packetSize, char* packet) { return ProcessUserDisconnect(sessionId, packetSize, packet); };
-
-	_packetFuncDict[(UINT16)PACKET_ID::CHAT_REQ] = [this](UINT32 sessionId, UINT16 packetSize, char* packet) { return ProcessChat(sessionId, packetSize, packet); };
-	_packetFuncDict[(UINT16)PACKET_ID::PONG] = [this](UINT32 sessionId, UINT16 packetSize, char* packet) { return ProcessPong(sessionId, packetSize, packet); };
+	// RedisManager 생성 및 초기화
+	_redisManager = std::make_unique<RedisManager>();
+	_redisManager->Init();
 }
 
 void PacketManager::Run(const UINT32 maxDBThreadCount)
@@ -41,7 +52,6 @@ void PacketManager::Run(const UINT32 maxDBThreadCount)
 	_isProcessThread = true;
 	_packetThread = std::thread([this]() { ProcessPacket(); });
 	_dbThread = std::thread([this]() { ProcessDB(); });
-	//_pingThread = std::thread([this]() { ProcessPing(); });
 }
 
 void PacketManager::End()
@@ -116,12 +126,13 @@ void PacketManager::ProcessPacket()
 	}
 }
 
-void PacketManager::PushChatLog(UINT32 sessionId, const char* nickname, const char* chatMsg)
+void PacketManager::PushChatLog(UINT32 sessionId, UINT32 roomNumber, const char* userId, const char* chatMsg)
 {
 	DB_CHATLOG_INFO chatLog;
 	chatLog.sessionId = sessionId;
-	std::memcpy(chatLog.nickname, nickname, MAX_NICKNAME_BYTE_LENGTH);
+	std::memcpy(chatLog.userId, userId, MAX_ID_PWD_BYTE_LENGTH);
 	std::memcpy(chatLog.chatMsg, chatMsg, MAX_CHAT_MSG_SIZE);
+	chatLog.roomNumber = roomNumber;
 	chatLog.dateTime = time(NULL);
 
 	std::lock_guard<std::mutex> guard(_chatLogLock);
@@ -156,6 +167,7 @@ void PacketManager::ProcessDB()
 			SQLLEN len = 0;
 			SQLLEN len2 = 0;
 			SQLLEN len3 = 0;
+			SQLLEN len4 = 0;
 
 			TIMESTAMP_STRUCT ts = {};
 			struct tm dateTime;
@@ -166,14 +178,15 @@ void PacketManager::ProcessDB()
 			ts.hour = dateTime.tm_hour;
 			ts.minute = dateTime.tm_min;
 			ts.second = dateTime.tm_sec;
-			SQLLEN len4 = 0;
+			SQLLEN len5 = 0;
 
 			ASSERT_CRASH(dbConnection->BindParam(1, &chatLog.sessionId, &len));
-			ASSERT_CRASH(dbConnection->BindParam(2, chatLog.nickname, &len2));
+			ASSERT_CRASH(dbConnection->BindParam(2, chatLog.userId, &len2));
 			ASSERT_CRASH(dbConnection->BindParam(3, chatLog.chatMsg, &len3));
-			ASSERT_CRASH(dbConnection->BindParam(4, &ts, &len4));
+			ASSERT_CRASH(dbConnection->BindParam(4, &chatLog.roomNumber, &len4));
+			ASSERT_CRASH(dbConnection->BindParam(5, &ts, &len5));
 
-			ASSERT_CRASH(dbConnection->Execute(L"INSERT INTO [dbo].[ChatLog]([SessionId], [Nickname], [ChatMsg], [DateTime]) VALUES(?, ?, ?, ?)"));
+			ASSERT_CRASH(dbConnection->Execute(L"INSERT INTO [dbo].[ChatLog]([SessionId], [UserId], [ChatMsg], [RoomNumber], [DateTime]) VALUES(?, ?, ?, ?, ?)"));
 		}
 
 		if (isIdle)
@@ -181,34 +194,6 @@ void PacketManager::ProcessDB()
 	}
 	
 	_dbConnectionPool->Push(dbConnection);
-}
-
-void PacketManager::ProcessPing()
-{
-	while (_isProcessThread)
-	{
-		PING_PACKET pingPacket;
-		pingPacket.packetId = (UINT16)PACKET_ID::PING;
-		pingPacket.packetSize = PACKET_HEADER_SIZE;
-		pingPacket.type = 0;
-
-		for (UINT32 i = 0; i < _userManager->GetMaxUserCount(); i++)
-		{
-			auto pUser = _userManager->GetUserBySessionId(i);
-			if (pUser->GetCurrentDomainState() == User::USER_DOMAIN_STATE::CONNECT)
-			{
-				if (pUser->AddPingCount() > 3)
-				{
-					_disconnectFunc(i);
-					continue;
-				}
-				
-				_sendPacketFunc(i, pingPacket.packetSize, (char*)&pingPacket);
-			}
-		}
-
-		std::this_thread::sleep_for(std::chrono::seconds(5));
-	}
 }
 
 #pragma region HANDLER FUNCTION
@@ -225,9 +210,101 @@ void PacketManager::ProcessUserDisconnect(UINT32 sessionId, UINT16 packetSize, c
 {
 	printf("[ProcessUserDisconnect] 클라이언트: sessionId(%d)\n", sessionId);
 
+	User* pUser = _userManager->GetUserBySessionId(sessionId);
+	_roomManager->LeaveUser(pUser, pUser->GetCurrentRoom());
 	_userManager->DisconnectUser(sessionId);
 	
 	printf("현재 접속한 클라이언트 수 : %d\n", _userManager->GetCurrentUserCount());
+}
+
+void PacketManager::ProcessLogin(UINT32 sessionId, UINT16 packetSize, char* packet)
+{
+	LOGIN_REQ_PACKET* loginReqPacket = reinterpret_cast<LOGIN_REQ_PACKET*>(packet);
+
+	if (packetSize != loginReqPacket->packetSize)
+		return;
+
+	LOGIN_RES_PACKET resPacket;
+	resPacket.packetSize = sizeof(LOGIN_RES_PACKET);
+	resPacket.packetId = (UINT16)PACKET_ID::LOGIN_RES;
+	resPacket.type = 0;
+	resPacket.result = (UINT16)ERROR_CODE::LOGIN_SUCCESS;
+
+	// Validation 체크 (RedisDB에 token 검증)
+	if (loginReqPacket->isDummy == false)
+	{
+		std::string value = _redisManager->GetValue(std::to_string(loginReqPacket->accountDbId));
+		nlohmann::json j = nlohmann::json::parse(value);
+	
+		if (loginReqPacket->accountDbId != j["AccountDbId"] || loginReqPacket->token != j["Token"] || j["Expired"] < ::GetTickCount64())
+		{
+			resPacket.result = (UINT16)ERROR_CODE::LOGIN_INVALID_TOKEN;
+			SendPacketFunc(sessionId, resPacket.packetSize, (char*)&resPacket);
+			return;
+		}
+	}
+
+	resPacket.result = _userManager->LoginUser(sessionId, loginReqPacket->userId);
+	SendPacketFunc(sessionId, resPacket.packetSize, (char*)&resPacket);
+}
+
+void PacketManager::ProcessLogout(UINT32 sessionId, UINT16 packetSize, char* packet)
+{
+	LOGOUT_REQ_PACKET* logoutReqPacket = reinterpret_cast<LOGOUT_REQ_PACKET*>(packet);
+
+	if (packetSize != logoutReqPacket->packetSize)
+		return;
+
+	User* pUser = _userManager->GetUserBySessionId(sessionId);
+	_roomManager->LeaveUser(pUser, pUser->GetCurrentRoom());
+	_userManager->LogoutUser(sessionId);
+
+	LOGOUT_RES_PACKET resPacket;
+	resPacket.packetSize = sizeof(LOGOUT_RES_PACKET);
+	resPacket.packetId = (UINT16)PACKET_ID::LOGOUT_RES;
+	resPacket.type = 0;
+	resPacket.result = (UINT16)ERROR_CODE::NONE;
+
+	SendPacketFunc(sessionId, resPacket.packetSize, (char*)&resPacket);
+}
+
+void PacketManager::ProcessRoomEnter(UINT32 sessionId, UINT16 packetSize, char* packet)
+{
+	ROOM_ENTER_REQ_PACKET* roomEnterReqPacket = reinterpret_cast<ROOM_ENTER_REQ_PACKET*>(packet);
+
+	if (packetSize != roomEnterReqPacket->packetSize)
+		return;
+
+	User* pUser = _userManager->GetUserBySessionId(sessionId);
+	UINT16 result = _roomManager->EnterUser(pUser, roomEnterReqPacket->roomNumber);
+
+	ROOM_ENTER_RES_PACKET resPacket;
+	resPacket.packetSize = sizeof(ROOM_ENTER_RES_PACKET);
+	resPacket.packetId = (UINT16)PACKET_ID::ROOM_ENTER_RES;
+	resPacket.type = 0;
+	resPacket.result = result;
+
+	SendPacketFunc(sessionId, resPacket.packetSize, (char*)&resPacket);
+}
+
+void PacketManager::ProcessRoomLeave(UINT32 sessionId, UINT16 packetSize, char* packet)
+{
+	ROOM_LEAVE_REQ_PACKET* roomLeaveReqPacket = reinterpret_cast<ROOM_LEAVE_REQ_PACKET*>(packet);
+
+	if (packetSize != roomLeaveReqPacket->packetSize)
+		return;
+
+	User* pUser = _userManager->GetUserBySessionId(sessionId);
+	Room* room = _roomManager->GetRoomByNumber(pUser->GetCurrentRoom());
+	UINT16 result = _roomManager->LeaveUser(pUser, pUser->GetCurrentRoom());
+
+	ROOM_LEAVE_RES_PACKET resPacket;
+	resPacket.packetSize = sizeof(ROOM_LEAVE_RES_PACKET);
+	resPacket.packetId = (UINT16)PACKET_ID::ROOM_LEAVE_RES;
+	resPacket.type = 0;
+	resPacket.result = result;
+
+	SendPacketFunc(sessionId, resPacket.packetSize, (char*)&resPacket);
 }
 
 void PacketManager::ProcessChat(UINT32 sessionId, UINT16 packetSize, char* packet)
@@ -237,35 +314,41 @@ void PacketManager::ProcessChat(UINT32 sessionId, UINT16 packetSize, char* packe
 	if (packetSize != chatReqPacket->packetSize)
 		return;
 	
-	PushChatLog(sessionId, chatReqPacket->nickname, chatReqPacket->chatMsg);
+	CHAT_RES_PACKET chatResPacket;
+	chatResPacket.packetSize = sizeof(CHAT_RES_PACKET);
+	chatResPacket.packetId = (UINT16)PACKET_ID::CHAT_RES;
+	chatResPacket.type = 0;
+	chatResPacket.result = (UINT16)ERROR_CODE::NONE;
+	chatResPacket.requestTimeTick = chatReqPacket->requestTimeTick;
+
+	User* pUser = _userManager->GetUserBySessionId(sessionId);
+	if (pUser == nullptr)
+	{
+		chatResPacket.result = (UINT16)ERROR_CODE::INVALID_SESSION;
+		SendPacketFunc(sessionId, chatResPacket.packetSize, (char*)&chatResPacket);
+		return;
+	}
+
+	Room* room = _roomManager->GetRoomByNumber(pUser->GetCurrentRoom());
+	if (room == nullptr)
+	{
+		chatResPacket.result = (UINT16)ERROR_CODE::ROOM_UNKNOWN_NUMBER;
+		SendPacketFunc(sessionId, chatResPacket.packetSize, (char*)&chatResPacket);
+		return;
+	}
 	
-	{
-		CHAT_BROADCAST_PACKET broadcastPacket;
-		broadcastPacket.packetSize = sizeof(CHAT_BROADCAST_PACKET);
-		broadcastPacket.packetId = (UINT16)PACKET_ID::CHAT_BROADCAST;
-		broadcastPacket.type = 0;
-		std::memcpy(broadcastPacket.nickname, chatReqPacket->nickname, MAX_NICKNAME_BYTE_LENGTH);
-		std::memcpy(broadcastPacket.chatMsg, chatReqPacket->chatMsg, MAX_CHAT_MSG_SIZE);
+	SendPacketFunc(sessionId, chatResPacket.packetSize, (char*)&chatResPacket);
+	
+	CHAT_BROADCAST_PACKET broadcastPacket;
+	broadcastPacket.packetSize = sizeof(CHAT_BROADCAST_PACKET);
+	broadcastPacket.packetId = (UINT16)PACKET_ID::CHAT_BROADCAST;
+	broadcastPacket.type = 0;
+	std::memcpy(broadcastPacket.userId, pUser->GetUserId(), MAX_ID_PWD_BYTE_LENGTH);
+	std::memcpy(broadcastPacket.chatMsg, chatReqPacket->chatMsg, MAX_CHAT_MSG_SIZE);
 
-		_userManager->BroadcastToConnectingUser(sessionId, broadcastPacket.packetSize, (char*)&broadcastPacket);
-	}
+	room->Broadcast(sessionId, broadcastPacket.packetSize, (char*)&broadcastPacket, false);
 
-	{
-		CHAT_RES_PACKET chatResPacket;
-		chatResPacket.packetSize = sizeof(CHAT_RES_PACKET);
-		chatResPacket.packetId = (UINT16)PACKET_ID::CHAT_RES;
-		chatResPacket.type = 0;
-		chatResPacket.result = (UINT16)ERROR_CODE::NONE;
-		chatResPacket.requestTimeTick = chatReqPacket->requestTimeTick;
-
-		_sendPacketFunc(sessionId, chatResPacket.packetSize, (char*)&chatResPacket);
-	}
-}
-
-void PacketManager::ProcessPong(UINT32 sessionId, UINT16 packetSize, char* packet)
-{
-	auto pUser = _userManager->GetUserBySessionId(sessionId);
-	pUser->ResetPingCount();
+	PushChatLog(sessionId, pUser->GetCurrentRoom(), pUser->GetUserId(), chatReqPacket->chatMsg);
 }
 
 #pragma endregion

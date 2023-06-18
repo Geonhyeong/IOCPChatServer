@@ -15,8 +15,12 @@ namespace DummyClient
 
 			connector.Connect(endPoint,
 				() => { return SessionManager.Instance.Generate(); },
-				500);
+				10);
 
+			Console.ReadLine();
+			SessionManager.Instance.LoginForEach();
+			Console.ReadLine();
+			SessionManager.Instance.EnterRoomForEach();
 			Console.ReadLine();
 
 			while (true)

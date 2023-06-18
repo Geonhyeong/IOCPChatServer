@@ -7,6 +7,7 @@
 
 class Session
 {
+	friend class IOCP;
 public:
 	Session()
 	{
@@ -40,10 +41,10 @@ public:
 		return RegisterAccept(listenSocket);
 	}
 
-	void Disconnect(bool isForce = false)
+	bool Disconnect(bool isForce = false)
 	{
 		if (IsConnected() == false)
-			return;
+			return false;
 
 		struct linger stLinger = { 0, 0 };	// SO_DONTLINGER로 설정
 
@@ -62,7 +63,8 @@ public:
 		_socket = INVALID_SOCKET;
 		
 		_isConnected = false;
-		_latestDisconnectedTimeSec = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
+		_latestDisconnectedTimeSec = std::chrono::duration_cast<std::chrono::seconds>
+										(std::chrono::steady_clock::now().time_since_epoch()).count();
 	}
 
 	bool Send(const UINT32 len, char* buf)
@@ -81,6 +83,76 @@ public:
 
 		if (_sendQueue.size() == 1)
 			RegisterSend();
+
+		return true;
+	}
+
+private:
+	bool RegisterAccept(SOCKET listenSocket)
+	{
+		_socket = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_IP, NULL, 0, WSA_FLAG_OVERLAPPED);
+		if (_socket == INVALID_SOCKET)
+		{
+			printf("[에러] WSASocket()함수 실패 : %d\n", GetLastError());
+			return false;
+		}
+
+		DWORD bytes = 0;
+		DWORD flags = 0;
+		_acceptOverlappedEx.wsaBuf.len = 0;
+		_acceptOverlappedEx.wsaBuf.buf = nullptr;
+		_acceptOverlappedEx.ioEvent = IOEvent::ACCEPT;
+		_acceptOverlappedEx.sessionId = _sessionId;
+
+		if (FALSE == AcceptEx(listenSocket, _socket, _acceptBuffer, 0, 
+			sizeof(SOCKADDR_IN) + 16, sizeof(SOCKADDR_IN) + 16, &bytes, (LPWSAOVERLAPPED)&_acceptOverlappedEx))
+		{
+			if (WSAGetLastError() != WSA_IO_PENDING)
+			{
+				printf("[에러] AcceptEx()함수 실패 : %d\n", GetLastError());
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	bool RegisterRecv()
+	{
+		DWORD flag = 0;
+		DWORD numOfBytes = 0;
+
+		// Overlapped I/O를 위해 각 정보를 세팅한다.
+		_recvOverlappedEx.wsaBuf.len = MAX_SOCKET_BUFFER;
+		_recvOverlappedEx.wsaBuf.buf = _recvBuffer;
+		_recvOverlappedEx.ioEvent = IOEvent::RECV;
+		_recvOverlappedEx.sessionId = _sessionId;
+
+		int nRet = WSARecv(_socket, &(_recvOverlappedEx.wsaBuf), 1, &numOfBytes, &flag, (LPWSAOVERLAPPED)&_recvOverlappedEx, NULL);
+
+		// socket_error이면 client socket이 끊어진걸로 처리한다.
+		if (nRet == SOCKET_ERROR && (WSAGetLastError() != ERROR_IO_PENDING))
+		{
+			printf("[에러] WSARecv()함수 실패 : %d\n", WSAGetLastError());
+			return false;
+		}
+
+		return true;
+	}
+
+	bool RegisterSend()
+	{
+		auto sendOverlappedEx = _sendQueue.front();
+
+		DWORD numOfBytes = 0;
+		int nRet = WSASend(_socket, &(sendOverlappedEx->wsaBuf), 1, &numOfBytes, 0, (LPWSAOVERLAPPED)sendOverlappedEx, NULL);
+
+		//socket_error이면 client socket이 끊어진걸로 처리한다.
+		if (nRet == SOCKET_ERROR && (WSAGetLastError() != ERROR_IO_PENDING))
+		{
+			printf("[에러] WSASend()함수 실패 : %d\n", WSAGetLastError());
+			return false;
+		}
 
 		return true;
 	}
@@ -131,14 +203,14 @@ public:
 		return true;
 	}
 
-	void ProcessRecv(const UINT32 len)
+	bool ProcessRecv(const UINT32 len)
 	{
 		//printf("[수신] 세션 : %d, bytes : %d\n", _sessionId, len);
 
-		RegisterRecv();
+		return RegisterRecv();
 	}
 
-	void ProcessSend(const UINT32 len)
+	bool ProcessSend(const UINT32 len)
 	{
 		//printf("[송신] 세션 : %d, bytes : %d\n", _sessionId, len);
 
@@ -151,73 +223,6 @@ public:
 
 		if (_sendQueue.empty() == false)
 			RegisterSend();
-	}
-
-private:
-	bool RegisterAccept(SOCKET listenSocket)
-	{
-		_socket = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_IP, NULL, 0, WSA_FLAG_OVERLAPPED);
-		if (_socket == INVALID_SOCKET)
-		{
-			printf("[에러] WSASocket()함수 실패 : %d\n", GetLastError());
-			return false;
-		}
-
-		DWORD bytes = 0;
-		DWORD flags = 0;
-		_acceptOverlappedEx.wsaBuf.len = 0;
-		_acceptOverlappedEx.wsaBuf.buf = nullptr;
-		_acceptOverlappedEx.ioEvent = IOEvent::ACCEPT;
-		_acceptOverlappedEx.sessionId = _sessionId;
-
-		if (FALSE == AcceptEx(listenSocket, _socket, _acceptBuffer, 0, sizeof(SOCKADDR_IN) + 16, sizeof(SOCKADDR_IN) + 16, &bytes, (LPWSAOVERLAPPED)&_acceptOverlappedEx))
-		{
-			if (WSAGetLastError() != WSA_IO_PENDING)
-			{
-				printf("[에러] AcceptEx()함수 실패 : %d\n", GetLastError());
-				return false;
-			}
-		}
-
-		return true;
-	}
-
-	bool RegisterRecv()
-	{
-		DWORD flag = 0;
-		DWORD numOfBytes = 0;
-
-		// Overlapped I/O를 위해 각 정보를 세팅한다.
-		_recvOverlappedEx.wsaBuf.len = MAX_SOCKET_BUFFER;
-		_recvOverlappedEx.wsaBuf.buf = _recvBuffer;
-		_recvOverlappedEx.ioEvent = IOEvent::RECV;
-		_recvOverlappedEx.sessionId = _sessionId;
-
-		int nRet = WSARecv(_socket, &(_recvOverlappedEx.wsaBuf), 1, &numOfBytes, &flag, (LPWSAOVERLAPPED)&_recvOverlappedEx, NULL);
-
-		// socket_error이면 client socket이 끊어진걸로 처리한다.
-		if (nRet == SOCKET_ERROR && (WSAGetLastError() != ERROR_IO_PENDING))
-		{
-			printf("[에러] WSARecv()함수 실패 : %d\n", WSAGetLastError());
-			return false;
-		}
-
-		return true;
-	}
-
-	bool RegisterSend()
-	{
-		auto sendOverlappedEx = _sendQueue.front();
-
-		DWORD numOfBytes = 0;
-		int nRet = WSASend(_socket, &(sendOverlappedEx->wsaBuf), 1, &numOfBytes, 0, (LPWSAOVERLAPPED)sendOverlappedEx, NULL);
-
-		//socket_error이면 client socket이 끊어진걸로 처리한다.
-		if (nRet == SOCKET_ERROR && (WSAGetLastError() != ERROR_IO_PENDING))
-		{
-			printf("[에러] WSASend()함수 실패 : %d\n", WSAGetLastError());
-			return false;
-		}
 
 		return true;
 	}

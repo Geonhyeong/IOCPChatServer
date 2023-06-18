@@ -24,9 +24,6 @@ namespace WinformStudy
                 args.UserToken = socket;
 
                 RegisterConnect(args);
-
-                // TEMP
-                Thread.Sleep(10);
             }
         }
 

@@ -125,12 +125,6 @@ public:
 		return session->Send(len, buf);
 	}
 
-	void Disconnect(const UINT32 sessionId)
-	{
-		Session* session = _sessions[sessionId];
-		CloseSocket(session, true);
-	}
-
 	virtual void OnConnected(const UINT32 sessionId) = 0;
 	virtual void OnDisconnected(const UINT32 sessionId) = 0;
 	virtual void OnRecv(const UINT32 sessionId, const UINT32 len, char* buf) = 0;
@@ -259,7 +253,8 @@ private:
 	{
 		while (_isAcceptRun)
 		{
-			auto curTimeSec = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
+			auto curTimeSec = std::chrono::duration_cast<std::chrono::seconds>
+				(std::chrono::steady_clock::now().time_since_epoch()).count();
 
 			for (auto& session : _sessions)
 			{
@@ -285,9 +280,9 @@ private:
 	{
 		auto sessionId = session->GetSessionId();
 
-		session->Disconnect(isForce);
-
 		OnDisconnected(sessionId);
+
+		session->Disconnect(isForce);
 	}
 
 

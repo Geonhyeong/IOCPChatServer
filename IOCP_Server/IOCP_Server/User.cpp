@@ -3,15 +3,15 @@
 void User::Init(UINT32 sessionId)
 {
 	_sessionId = sessionId;
+
 	_ringBuffer = new char[USER_BUFFER_SIZE];
-	
-	_curDomainState = USER_DOMAIN_STATE::NONE;
 }
 
 void User::Clear()
 {
+	memset(_userId, 0, sizeof(_userId));
+	_roomNumber = 0;
 	_curDomainState = USER_DOMAIN_STATE::NONE;
-	_pingCount = 0;
 
 	_writePos = 0;
 	_readPos = 0;
@@ -20,7 +20,38 @@ void User::Clear()
 void User::Connect()
 {
 	_curDomainState = USER_DOMAIN_STATE::CONNECT;
-	_pingCount = 0;
+}
+
+void User::Login(const char* userId)
+{
+	_curDomainState = USER_DOMAIN_STATE::LOGIN;
+	std::memcpy(_userId, userId, MAX_ID_PWD_BYTE_LENGTH);
+	
+	printf("sessionId(%d) is login\n", _sessionId);
+}
+
+void User::Logout()
+{
+	memset(_userId, 0, sizeof(_userId));
+	_roomNumber = 0;
+	_curDomainState = USER_DOMAIN_STATE::CONNECT;
+	
+	_writePos = 0;
+	_readPos = 0;
+
+	printf("sessionId(%d) is logout\n", _sessionId);
+}
+
+void User::EnterRoom(UINT32 roomNumber)
+{
+	_roomNumber = roomNumber;
+	_curDomainState = USER_DOMAIN_STATE::ROOM;
+}
+
+void User::LeaveRoom()
+{
+	_roomNumber = 0;
+	_curDomainState = USER_DOMAIN_STATE::LOGIN;
 }
 
 void User::PushPacket(UINT32 packetSize, char* packet)

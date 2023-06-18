@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Net;
+using System.Text;
 using System.Windows.Forms;
 using System.Windows.Threading;
 
@@ -9,9 +12,11 @@ namespace WinformStudy
     public partial class Form1 : Form
     {
         private Connector connector = new Connector();
+        private HostSession session = null;
         private DispatcherTimer dispatcherUITimer;
 
         private bool IsBackgroundProcessRunning = false;
+        private List<string> UserList = new List<string>();
         private Queue<string> RoomChatMsgQueue = new Queue<string>();
         private Queue<long> DelayTimeQueue = new Queue<long>(5);
 
@@ -30,12 +35,11 @@ namespace WinformStudy
             dispatcherUITimer.Start();
 
             btnDisconnect.Enabled = false;
-            btnDummyDisconnect.Enabled = false;
-            btnDummyChatStart.Enabled = false;
-            btnDummyChatStop.Enabled = false;
-            btnDummyPlus.Enabled = false;
-            btnDummyMinus.Enabled = false;
-            comboBoxAddCount.SelectedIndex = 0;
+            btnLogin.Enabled = false;
+            btnLogout.Enabled = false;
+            btnRoomEnter.Enabled = false;
+            btnRoomLeave.Enabled = false;
+            btnChat.Enabled = false;
 
             InitPacketHandler();
 
@@ -45,8 +49,6 @@ namespace WinformStudy
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
             IsBackgroundProcessRunning = false;
-
-            
         }
 
         private void checkBoxLocalHost_CheckedChanged(object sender, EventArgs e)
@@ -57,106 +59,160 @@ namespace WinformStudy
 
         private void btnConnect_Click(object sender, EventArgs e)
         {
+            if (session != null)
+                return;
+
             string ip = textBoxIP.Text;
             int port = Convert.ToInt32(textBoxPort.Text);
 
-            connector.Connect(ip, port, () => { return SessionManager.Instance.GenerateHostSession(); });
+            connector.Connect(ip, port, () => { session = new HostSession(); return session; });
             btnConnect.Enabled = false;
             btnDisconnect.Enabled = true;
+            btnLogin.Enabled = true;
         }
 
         private void btnDisconnect_Click(object sender, EventArgs e)
         {
-            SessionManager.Instance.RemoveHostSession();
+            if (session == null)
+                return;
 
-            btnDisconnect.Enabled = false;
-            btnConnect.Enabled = true;
+            session.Disconnect();
+            session = null;
 
             RoomChatMsgQueue.Clear();
+            
+            btnDisconnect.Enabled = false;
+            btnConnect.Enabled = true;
+            btnLogin.Enabled = false;
+            btnLogout.Enabled = false;
+            btnRoomEnter.Enabled = false;
+            btnRoomLeave.Enabled = false;
+            btnChat.Enabled = false;
+
+            labelDelayTime.Text = "0 ms";
+            tbRoomNumber.Text = "";
+            tbUserId.Text = "";
+            tbPassword.Text = "";
+
+            UserList.Clear();
         }
 
-        private void btnDummyPlus_Click(object sender, EventArgs e)
+        private void btnLogin_Click(object sender, EventArgs e)
         {
-            if (comboBoxAddCount.SelectedIndex < 0)
+            string userId = tbUserId.Text;
+            string password = tbPassword.Text;
+
+            if (userId == "" || password == "")
+            {
+                MessageBox.Show("아이디 및 비밀번호를 입력하세요");
                 return;
+            }
 
-            string ip = textBoxIP.Text;
-            int port = Convert.ToInt32(textBoxPort.Text);
-            int addCount = Convert.ToInt32(comboBoxAddCount.SelectedItem);
+            // Web Server에 로그인 요청
+            var httpWebRequest = (HttpWebRequest)WebRequest.Create("https://localhost:5001/api/login/login");
+            httpWebRequest.ContentType = "application/json";
+            httpWebRequest.Method = "POST";
 
-            connector.Connect(ip, port, () => { return SessionManager.Instance.GenerateDummySession(); }, addCount);
-            textBoxDummyCount.Text = SessionManager.Instance.GetDummyCount().ToString();
+            WebTokenReqPacket packet = new WebTokenReqPacket();
+            packet.UserId = userId;
+            packet.Password = password;
 
-            if (btnDummyChatStart.Enabled == false)
-                SessionManager.Instance.DummyAutoChatStart();
+            string json = Newtonsoft.Json.JsonConvert.SerializeObject(packet);
+            byte[] bytes = Encoding.UTF8.GetBytes(json);
+
+            using (Stream reqStream = httpWebRequest.GetRequestStream())
+            {
+                reqStream.Write(bytes, 0, bytes.Length);
+            }
+
+            string responseText = string.Empty;
+            using (var httpResponse = (WebResponse)httpWebRequest.GetResponse())
+            {
+                Stream resStream = httpResponse.GetResponseStream();
+                using (StreamReader reader = new StreamReader(resStream))
+                {
+                    responseText = reader.ReadToEnd();
+                    WebTokenResPacket resPacket = Newtonsoft.Json.JsonConvert.DeserializeObject<WebTokenResPacket>(responseText);
+
+                    if (resPacket.LoginOk)
+                    {
+                        session.UserId = userId;
+
+                        LoginReqPacket loginReqPacket = new LoginReqPacket();
+                        loginReqPacket.SetValue(userId, resPacket.AccountDbId, resPacket.Token);
+
+                        byte[] sendBuffer = PacketDef.MakeSendBuffer(PACKET_ID.LOGIN_REQ, loginReqPacket.ToBytes());
+                        session.Send(new ArraySegment<byte>(sendBuffer));
+
+                        btnLogin.Enabled = false;
+                        btnLogout.Enabled = true;
+                        btnRoomEnter.Enabled = true;
+                    }
+                    else
+                        MessageBox.Show("로그인 실패");
+                }
+            }
         }
 
-        private void btnDummyMinus_Click(object sender, EventArgs e)
+        private void btnLogout_Click(object sender, EventArgs e)
         {
-            if (comboBoxAddCount.SelectedIndex < 0)
+            byte[] sendBuffer = PacketDef.MakeSendBuffer(PACKET_ID.LOGOUT_REQ, new byte[0]);
+            session.Send(new ArraySegment<byte>(sendBuffer));
+            
+            btnLogout.Enabled = false;
+            btnRoomEnter.Enabled = false;
+            btnRoomLeave.Enabled = false;
+            btnLogin.Enabled = true;
+
+            labelDelayTime.Text = "0 ms";
+            tbRoomNumber.Text = "";
+
+            UserList.Clear();
+        }
+
+        private void btnRoomEnter_Click(object sender, EventArgs e)
+        {
+            if (tbRoomNumber.Text.Length == 0)
+            {
+                MessageBox.Show("방 번호를 입력하세요");
                 return;
+            }
 
-            int minusCount = Convert.ToInt32(comboBoxAddCount.SelectedItem);
+            UInt32 roomNumber = UInt32.Parse(tbRoomNumber.Text);
 
-            SessionManager.Instance.RemoveDummySessions(minusCount);
-            textBoxDummyCount.Text = SessionManager.Instance.GetDummyCount().ToString();
+            RoomEnterReqPacket roomEnterReqPacket = new RoomEnterReqPacket();
+            roomEnterReqPacket.SetValue(roomNumber);
+
+            byte[] sendBuffer = PacketDef.MakeSendBuffer(PACKET_ID.ROOM_ENTER_REQ, roomEnterReqPacket.ToBytes());
+            session.Send(new ArraySegment<byte>(sendBuffer));
+
+            btnRoomEnter.Enabled = false;
+            btnRoomLeave.Enabled = true;
+            btnChat.Enabled = true;
         }
 
-        private void btnDummyChatStart_Click(object sender, EventArgs e)
+        private void btnRoomLeave_Click(object sender, EventArgs e)
         {
-            SessionManager.Instance.DummyAutoChatStart();
+            byte[] sendBuffer = PacketDef.MakeSendBuffer(PACKET_ID.ROOM_LEAVE_REQ, new byte[0]);
+            session.Send(new ArraySegment<byte>(sendBuffer));
 
-            btnDummyChatStart.Enabled = false;
-            btnDummyChatStop.Enabled = true;
+            btnChat.Enabled = false;
+            btnRoomLeave.Enabled = false;
+            btnRoomEnter.Enabled = true;
+
+            UserList.Clear();
         }
 
-        private void btnDummyChatStop_Click(object sender, EventArgs e)
+        private void textBoxChatMessage_KeyDown(object sender, KeyEventArgs e)
         {
-            SessionManager.Instance.DummyAutoChatStop();
-
-            btnDummyChatStop.Enabled = false;
-            btnDummyChatStart.Enabled = true;
-        }
-
-        private void btnDummyConnect_Click(object sender, EventArgs e)
-        {
-            string ip = textBoxIP.Text;
-            int port = Convert.ToInt32(textBoxPort.Text);
-            int dummyCount = Convert.ToInt32(textBoxDummyCount.Text);
-
-            connector.Connect(ip, port, () => { return SessionManager.Instance.GenerateDummySession(); }, dummyCount);
-            btnDummyConnect.Enabled = false;
-            btnDummyDisconnect.Enabled = true;
-
-            btnDummyChatStart.Enabled = true;
-            btnDummyChatStop.Enabled = false;
-
-            btnDummyPlus.Enabled = true;
-            btnDummyMinus.Enabled = true;
-        }
-        
-        private void btnDummyDisconnect_Click(object sender, EventArgs e)
-        {
-            SessionManager.Instance.RemoveDummySessions();
-
-            btnDummyChatStart.Enabled = false;
-            btnDummyChatStop.Enabled = false;
-
-            btnDummyDisconnect.Enabled = false;
-            btnDummyConnect.Enabled = true;
-
-            btnDummyPlus.Enabled = false;
-            btnDummyMinus.Enabled = false;
+            if (e.KeyCode == Keys.Enter)
+            {
+                btnChat_Click(sender, e);
+            }
         }
 
         private void btnChat_Click(object sender, EventArgs e)
         {
-            if (textBoxUserName.Text.Length == 0)
-            {
-                MessageBox.Show("닉네임을 입력하세요");
-                return;
-            }
-
             if (textBoxChatMessage.Text.Length == 0)
             {
                 MessageBox.Show("채팅 메시지를 입력하세요");
@@ -164,20 +220,18 @@ namespace WinformStudy
             }
 
             ChatReqPacket chatReqPacket = new ChatReqPacket();
-            chatReqPacket.SetValue(textBoxUserName.Text, textBoxChatMessage.Text, DateTime.Now.Ticks);
+            chatReqPacket.SetValue(textBoxChatMessage.Text, DateTime.Now.Ticks);
 
             byte[] sendBuffer = PacketDef.MakeSendBuffer(PACKET_ID.CHAT_REQ, chatReqPacket.ToBytes());
-            SessionManager.Instance.SendFromHost(new ArraySegment<byte>(sendBuffer));
+            session.Send(new ArraySegment<byte>(sendBuffer));
 
-            string msg = $"{textBoxUserName.Text} > {textBoxChatMessage.Text}";
-            RoomChatMsgQueue.Enqueue(msg);
-
-            //textBoxChatMessage.Text = "";
+            textBoxChatMessage.Text = "";
         }
 
         private void BackgroundWorker(object sender, EventArgs e)
         {
             ProcessLog();
+            ProcessUserList();
             ProcessRoomChat();
             DelayCheck();
         }
@@ -214,6 +268,21 @@ namespace WinformStudy
                 {
                     break;
                 }
+            }
+        }
+
+        private void ProcessUserList()
+        {
+            if (IsBackgroundProcessRunning)
+            {
+                listBoxUserList.Items.Clear();
+
+                foreach (string user in UserList)
+                {
+                    listBoxUserList.Items.Add(user);
+                }
+
+                labelRoomUserCount.Text = UserList.Count.ToString();
             }
         }
 
@@ -259,5 +328,6 @@ namespace WinformStudy
                 labelDelayTime.Text = $"{sum / DelayTimeQueue.Count()} ms";
             }
         }
+
     }
 }

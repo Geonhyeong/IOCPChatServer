@@ -13,7 +13,7 @@ public:
 
 	virtual void OnConnected(const UINT32 sessionId) override
 	{
-		//printf("[OnConnect] 클라이언트: sessionId(%d)\n", sessionId);
+		printf("[OnConnect] 클라이언트: sessionId(%d)\n", sessionId);
 
 		PacketInfo packet{ sessionId, (UINT16)PACKET_ID::SYS_USER_CONNECT, 0 };
 		_packetManager->PushSystemPacket(packet);
@@ -21,7 +21,7 @@ public:
 
 	virtual void OnDisconnected(const UINT32 sessionId) override
 	{
-		//printf("[OnDisconnected] 클라이언트: sessionId(%d)\n", sessionId);
+		printf("[OnDisconnected] 클라이언트: sessionId(%d)\n", sessionId);
 
 		PacketInfo packet{ sessionId, (UINT16)PACKET_ID::SYS_USER_DISCONNECT, 0 };
 		_packetManager->PushSystemPacket(packet);
@@ -41,13 +41,9 @@ public:
 			Send(sessionId, packetSize, packet); 
 		};
 
-		auto disconnectFunc = [&](UINT32 sessionId)
-		{
-			Disconnect(sessionId);
-		};
-
 		_packetManager = std::make_unique<PacketManager>();
-		_packetManager->Init(maxClientCount, sendPacketFunc, disconnectFunc);
+		_packetManager->SendPacketFunc = sendPacketFunc;
+		_packetManager->Init(maxClientCount);
 		_packetManager->Run(maxDBThreadCount);
 
 		printf("패킷 매니저 쓰레드 시작...\n");

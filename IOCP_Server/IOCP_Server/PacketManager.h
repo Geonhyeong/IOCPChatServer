@@ -1,6 +1,8 @@
 #pragma once
 #include "Packet.h"
+#include "RoomManager.h"
 #include "UserManager.h"
+#include "RedisManager.h"
 #include "DBConnectionPool.h"
 #include "DBInfo.h"
 
@@ -18,7 +20,7 @@ public:
 	PacketManager() = default;
 	~PacketManager() = default;
 
-	void	Init(const UINT32 maxClientCount, const std::function<void(UINT32, UINT16, char*)> sendPacketFunc, const std::function<void(UINT32)> disconnectFunc);
+	void	Init(const UINT32 maxClientCount);
 	void	Run(const UINT32 maxDBThreadCount);
 	void	End();
 
@@ -29,31 +31,34 @@ private:
 	PacketInfo	PopPacket();
 	void		ProcessPacket();
 
-	void			PushChatLog(UINT32 sessionId, const char* nickname, const char* chatMsg);
+	void			PushChatLog(UINT32 sessionId, UINT32 roomNumber, const char* userId, const char* chatMsg);
 	DB_CHATLOG_INFO	PopChatLog();
 	void			ProcessDB();
-
-	void			ProcessPing();
 
 #pragma region HANDLER FUNCTION
 	void	ProcessUserConnect(UINT32 sessionId, UINT16 packetSize, char* packet);
 	void	ProcessUserDisconnect(UINT32 sessionId, UINT16 packetSize, char* packet);
 
+	void	ProcessLogin(UINT32 sessionId, UINT16 packetSize, char* packet);
+	void	ProcessLogout(UINT32 sessionId, UINT16 packetSize, char* packet);
+	void	ProcessRoomEnter(UINT32 sessionId, UINT16 packetSize, char* packet);
+	void	ProcessRoomLeave(UINT32 sessionId, UINT16 packetSize, char* packet);
 	void	ProcessChat(UINT32 sessionId, UINT16 packetSize, char* packet);
-	void	ProcessPong(UINT32 sessionId, UINT16 packetSize, char* packet);
 #pragma endregion
+
+public:
+	std::function<void(UINT32, UINT16, char*)>	SendPacketFunc;
 
 private:
 	std::unordered_map<UINT16, PacketFunction>	_packetFuncDict;
-	std::function<void(UINT32, UINT16, char*)>	_sendPacketFunc;
-	std::function<void(UINT32)>					_disconnectFunc;
+	std::unique_ptr<RoomManager>				_roomManager;
 	std::unique_ptr<UserManager>				_userManager;
+	std::unique_ptr<RedisManager>				_redisManager;
 	std::unique_ptr<DBConnectionPool>			_dbConnectionPool;
 
 	bool				_isProcessThread = false;
 	std::thread			_packetThread;
 	std::thread			_dbThread;
-	std::thread			_pingThread;
 	
 	std::mutex					_packetLock, _chatLogLock;
 	std::queue<UINT32>			_packetSessionIdQueue;
