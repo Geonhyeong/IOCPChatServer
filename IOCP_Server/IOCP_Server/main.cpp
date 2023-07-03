@@ -4,8 +4,8 @@
 #include <iostream>
 
 const UINT16 SERVER_PORT = 2581;
-const UINT16 MAX_CLIENT = 1001;			// 접속 가능한 최대 클라이언트 수
-const UINT32 MAX_IO_WORKER_THREAD = 5;	// 쓰레드 풀에 넣을 쓰레드 수
+const UINT16 MAX_CLIENT = 10;			// 접속 가능한 최대 클라이언트 수
+const UINT32 MAX_IO_WORKER_THREAD = 1;	// 쓰레드 풀에 넣을 쓰레드 수
 const UINT32 MAX_DB_THREAD = 1;	// DB 작업을 맡을 쓰레드 수
 
 int main()
@@ -28,5 +28,6 @@ int main()
 	}
 
 	server.End();
+
 	return 0;
 }

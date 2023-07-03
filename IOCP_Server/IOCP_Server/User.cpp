@@ -1,5 +1,11 @@
 #include "User.h"
 
+User::~User()
+{
+	delete[] _userId;
+	delete[] _ringBuffer;
+}
+
 void User::Init(UINT32 sessionId)
 {
 	_sessionId = sessionId;

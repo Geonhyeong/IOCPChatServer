@@ -69,6 +69,7 @@ public:
 
 	bool Send(const UINT32 len, char* buf)
 	{
+		// TODO : memory leak problem
 		OverlappedEx* sendOverlappedEx = new OverlappedEx;
 		ZeroMemory(sendOverlappedEx, sizeof(OverlappedEx));
 		sendOverlappedEx->wsaBuf.len = len;

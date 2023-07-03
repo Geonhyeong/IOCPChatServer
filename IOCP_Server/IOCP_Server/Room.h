@@ -36,7 +36,7 @@ public:
 			userListPacket.packetId = (UINT16)PACKET_ID::ROOM_USER_LIST;
 			userListPacket.type = 0;
 			userListPacket.userCount = GetCurrentUserCount();
-			memcpy(userListPacket.userList, GetUserList(), MAX_USER_LIST_BYTE_LENGTH);
+			GetUserList(userListPacket.userList);
 
 			Broadcast(user->GetSessionId(), userListPacket.packetSize, (char*)&userListPacket, false);
 		}
@@ -64,7 +64,7 @@ public:
 			userListPacket.packetId = (UINT16)PACKET_ID::ROOM_USER_LIST;
 			userListPacket.type = 0;
 			userListPacket.userCount = GetCurrentUserCount();
-			memcpy(userListPacket.userList, GetUserList(), MAX_USER_LIST_BYTE_LENGTH);
+			GetUserList(userListPacket.userList);
 
 			Broadcast(user->GetSessionId(), userListPacket.packetSize, (char*)&userListPacket, true);
 		}
@@ -86,9 +86,8 @@ public:
 		}
 	}
 
-	char* GetUserList()
+	void GetUserList(OUT char* userList)
 	{
-		char* userList = new char[MAX_USER_LIST_BYTE_LENGTH];
 		UINT32 writePos = 0;
 
 		for (auto& user : _users)
@@ -99,8 +98,6 @@ public:
 			CopyMemory(&userList[writePos], user->GetUserId(), MAX_ID_PWD_BYTE_LENGTH);
 			writePos += MAX_ID_PWD_BYTE_LENGTH;
 		}
-
-		return userList;
 	}
 
 	UINT32 GetCurrentUserCount() { return (UINT32)_users.size(); }

@@ -2,6 +2,11 @@
 #include "ErrorCode.h"
 #include <nlohmann/json.hpp>
 
+PacketManager::~PacketManager()
+{
+	_packetFuncDict.clear();
+}
+
 void PacketManager::Init(const UINT32 maxClientCount)
 {
 	// 함수자 할당
@@ -22,7 +27,7 @@ void PacketManager::Init(const UINT32 maxClientCount)
 	// RoomManager 생성 및 초기화
 	_roomManager = std::make_unique<RoomManager>();
 	_roomManager->SendPacketFunc = SendPacketFunc;
-	_roomManager->Init(1000, 100, 10);
+	_roomManager->Init(1000, 100, 11);
 
 	// UserManager 생성 및 초기화
 	_userManager = std::make_unique<UserManager>();
@@ -42,7 +47,7 @@ void PacketManager::Run(const UINT32 maxDBThreadCount)
 		ASSERT_CRASH(dbConnection->Execute(DB_CREATE_TABLE_QUERY));
 		_dbConnectionPool->Push(dbConnection);
 	}
-	if (bool TRUNCATE_TABLE = false)
+	if (bool TRUNCATE_TABLE = true)
 	{
 		DBConnection* dbConnection = _dbConnectionPool->Pop();
 		ASSERT_CRASH(dbConnection->Execute(DB_TRUNCATE_TABLE_QUERY));
@@ -128,6 +133,7 @@ void PacketManager::ProcessPacket()
 
 void PacketManager::PushChatLog(UINT32 sessionId, UINT32 roomNumber, const char* userId, const char* chatMsg)
 {
+	// TODO : memory leak problem
 	DB_CHATLOG_INFO chatLog;
 	chatLog.sessionId = sessionId;
 	std::memcpy(chatLog.userId, userId, MAX_ID_PWD_BYTE_LENGTH);

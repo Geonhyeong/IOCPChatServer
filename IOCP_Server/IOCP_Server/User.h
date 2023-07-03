@@ -17,7 +17,7 @@ class User
 {
 public:
 	User() = default;
-	~User() = default;
+	~User();
 
 	void				Init(UINT32 sessionId);
 	void				Clear();

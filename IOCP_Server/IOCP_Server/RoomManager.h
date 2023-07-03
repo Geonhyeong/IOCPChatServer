@@ -8,7 +8,10 @@ class RoomManager
 {
 public:
 	RoomManager() = default;
-	~RoomManager() = default;
+	~RoomManager()
+	{
+		_rooms.clear();
+	}
 
 	void Init(const UINT32 beginRoomCount, const UINT32 maxRoomCount, const UINT32 maxRoomUserCount)
 	{

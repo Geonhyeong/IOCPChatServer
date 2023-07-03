@@ -18,7 +18,7 @@ class PacketManager
 {
 public:
 	PacketManager() = default;
-	~PacketManager() = default;
+	~PacketManager();
 
 	void	Init(const UINT32 maxClientCount);
 	void	Run(const UINT32 maxDBThreadCount);
