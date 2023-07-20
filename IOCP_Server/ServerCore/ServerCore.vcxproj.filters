@@ -1,0 +1,80 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Util">
+      <UniqueIdentifier>{44c25709-e7b4-4e70-bb7e-aa645dfafc77}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Net">
+      <UniqueIdentifier>{d491ecfd-5070-423b-a2c3-59dceaf1db0d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Common">
+      <UniqueIdentifier>{557b3743-d969-4b23-8552-145c89d9bc8d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Net\Iocp">
+      <UniqueIdentifier>{86468a04-d815-434c-aa48-bd004014891a}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="pch.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Util\ThreadManager.h">
+      <Filter>Util</Filter>
+    </ClInclude>
+    <ClInclude Include="ServerLibrary.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Net\Acceptor.h">
+      <Filter>Net\Iocp</Filter>
+    </ClInclude>
+    <ClInclude Include="Net\SocketUtils.h">
+      <Filter>Net</Filter>
+    </ClInclude>
+    <ClInclude Include="Net\NetAddress.h">
+      <Filter>Net</Filter>
+    </ClInclude>
+    <ClInclude Include="Util\Types.h">
+      <Filter>Util</Filter>
+    </ClInclude>
+    <ClInclude Include="ServerEntry.h" />
+    <ClInclude Include="Net\IocpCore.h">
+      <Filter>Net\Iocp</Filter>
+    </ClInclude>
+    <ClInclude Include="Net\Session.h">
+      <Filter>Net\Iocp</Filter>
+    </ClInclude>
+    <ClInclude Include="Net\IocpEvent.h">
+      <Filter>Net\Iocp</Filter>
+    </ClInclude>
+    <ClInclude Include="Util\RingBuffer.h">
+      <Filter>Util</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="pch.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="Util\ThreadManager.cpp">
+      <Filter>Util</Filter>
+    </ClCompile>
+    <ClCompile Include="Net\Acceptor.cpp">
+      <Filter>Net\Iocp</Filter>
+    </ClCompile>
+    <ClCompile Include="Net\SocketUtils.cpp">
+      <Filter>Net</Filter>
+    </ClCompile>
+    <ClCompile Include="Net\NetAddress.cpp">
+      <Filter>Net</Filter>
+    </ClCompile>
+    <ClCompile Include="ServerEntry.cpp" />
+    <ClCompile Include="Net\IocpCore.cpp">
+      <Filter>Net\Iocp</Filter>
+    </ClCompile>
+    <ClCompile Include="Net\Session.cpp">
+      <Filter>Net\Iocp</Filter>
+    </ClCompile>
+    <ClCompile Include="Util\RingBuffer.cpp">
+      <Filter>Util</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>
