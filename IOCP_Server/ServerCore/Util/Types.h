@@ -17,3 +17,8 @@ using uint64 = unsigned __int64;
 
 using IocpObjectRef = shared_ptr<class IocpObject>;
 using SessionRef = shared_ptr<class Session>;
+using SendBufferRef = shared_ptr<class SendBuffer>;
+using SendBufferChunkRef = shared_ptr<class SendBufferChunk>;
+
+#define BUFFER_SIZE 65536
+#define SEND_BUFFER_CHUNK_SIZE 8192		// TLS 영역의 최대 스택 사이즈는 16KB이다.

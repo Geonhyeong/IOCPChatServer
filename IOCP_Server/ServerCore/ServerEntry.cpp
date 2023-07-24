@@ -57,14 +57,10 @@ bool ServerEntry::Close()
     if (_isStart == false)
         return false;
 
-    /*if (_acceptor->Stop() == false)
-        return false;
-    _acceptor = nullptr;*/
-
     _isAcceptRun = false;
     _isWorkerRun = false;
 
-    // TODO : Join
+    ThreadManager::GetInstance().Join();
 
     return true;
 }
@@ -76,7 +72,7 @@ void ServerEntry::CreateSessions(uint32 maxSessionCount)
     for (uint32 i = 0; i < maxSessionCount; i++)
     {
         // TODO : 나중에 Session을 상속받는 컨텐츠단의 Session에 접근하기 위해서 SessionFactory를 적용하여야 한다. 
-        SessionRef session = make_shared<Session>(_serverConf.MaxBufferSize);
+        SessionRef session = make_shared<Session>();
 
         _sessions.push_back(session);
     }

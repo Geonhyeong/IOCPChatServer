@@ -49,6 +49,9 @@
     <ClInclude Include="Util\RingBuffer.h">
       <Filter>Util</Filter>
     </ClInclude>
+    <ClInclude Include="Util\SendBuffer.h">
+      <Filter>Util</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -74,6 +77,9 @@
       <Filter>Net\Iocp</Filter>
     </ClCompile>
     <ClCompile Include="Util\RingBuffer.cpp">
+      <Filter>Util</Filter>
+    </ClCompile>
+    <ClCompile Include="Util\SendBuffer.cpp">
       <Filter>Util</Filter>
     </ClCompile>
   </ItemGroup>

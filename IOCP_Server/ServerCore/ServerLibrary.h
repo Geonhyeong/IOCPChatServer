@@ -48,6 +48,7 @@ using namespace std;
 #include "Util/Types.h"
 #include "Util/ThreadManager.h"
 #include "Util/RingBuffer.h"
+#include "Util/SendBuffer.h"
 
 #include "Net/NetAddress.h"
 #include "Net/SocketUtils.h"

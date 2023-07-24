@@ -9,7 +9,6 @@ struct ServerConf
 	uint32 MaxWorkerThreadCount;
 	uint32 MaxSessionCount;
 	uint64 ReuseSessionWaitTimeSec;
-	uint32 MaxBufferSize;
 };
 
 class ServerEntry

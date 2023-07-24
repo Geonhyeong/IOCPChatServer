@@ -2,10 +2,10 @@
 
 enum class EventType : uint8
 {
-	Accept,
-	Recv,
-	Send,
-	Disconnect
+	ACCEPT,
+	RECV,
+	SEND,
+	DISCONNECT
 };
 
 class IocpEvent : public OVERLAPPED
@@ -29,23 +29,25 @@ public:
 class AcceptEvent : public IocpEvent
 {
 public:
-	AcceptEvent() : IocpEvent(EventType::Accept) {}
+	AcceptEvent() : IocpEvent(EventType::ACCEPT) {}
 };
 
 class RecvEvent : public IocpEvent
 {
 public:
-	RecvEvent() : IocpEvent(EventType::Recv) {}
+	RecvEvent() : IocpEvent(EventType::RECV) {}
 };
 
 class SendEvent : public IocpEvent
 {
 public:
-	SendEvent() : IocpEvent(EventType::Send) {}
+	SendEvent() : IocpEvent(EventType::SEND) {}
+	
+	vector<SendBufferRef> sendBuffers;
 };
 
 class DisconnectEvent : public IocpEvent
 {
 public:
-	DisconnectEvent() : IocpEvent(EventType::Disconnect) {}
+	DisconnectEvent() : IocpEvent(EventType::DISCONNECT) {}
 };

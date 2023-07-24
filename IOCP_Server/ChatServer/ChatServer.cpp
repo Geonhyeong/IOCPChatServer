@@ -1,7 +1,31 @@
-﻿#include <iostream>
-#include <string>
+﻿#include "pch.h"
+#include <ServerEntry.h>
 
 int main()
 {
-    std::cout << "Hello_" + std::to_string(1) << std::endl;
+	ServerConf conf;
+	conf.IpAddress = L"127.0.0.1";
+	conf.Port = 2581;
+	conf.BackLog = INFINITE;
+	conf.MaxWorkerThreadCount = 3;
+	conf.MaxSessionCount = 100;
+	conf.ReuseSessionWaitTimeSec = 10;
+
+	ServerEntry::GetInstance().Start(conf);
+	
+	printf("아무 키나 누를 때까지 대기합니다.\n");
+	while (true)
+	{
+		string inputCmd;
+		::getline(cin, inputCmd);
+
+		if (inputCmd == "quit")
+		{
+			break;
+		}
+	}
+
+	ServerEntry::GetInstance().Close();
+
+	return 0;
 }

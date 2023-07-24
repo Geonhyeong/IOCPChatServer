@@ -2,6 +2,7 @@
 
 extern thread_local uint32 LThreadId;
 extern thread_local wstring LThreadName;
+extern thread_local SendBufferChunkRef	LSendBufferChunk;
 
 class ThreadManager
 {

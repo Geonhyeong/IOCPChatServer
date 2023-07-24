@@ -3,6 +3,7 @@
 
 thread_local uint32 LThreadId = 0;
 thread_local wstring LThreadName = L"INVALID_THREAD";
+thread_local SendBufferChunkRef	LSendBufferChunk;
 
 ThreadManager::ThreadManager()
 {

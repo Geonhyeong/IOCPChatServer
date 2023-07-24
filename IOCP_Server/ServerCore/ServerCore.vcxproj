@@ -73,18 +73,22 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>$(ProjectDir);$(IncludePath)</IncludePath>
+    <OutDir>$(SolutionDir)lib\$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(ProjectDir);$(IncludePath)</IncludePath>
+    <OutDir>$(SolutionDir)lib\$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>$(ProjectDir);$(IncludePath)</IncludePath>
+    <OutDir>$(SolutionDir)lib\$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(ProjectDir);$(IncludePath)</IncludePath>
+    <OutDir>$(SolutionDir)lib\$(Configuration)\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -101,16 +105,8 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PostBuildEvent>
-      <Command>if exist "$(SolutionDir)lib" rmdir "$(SolutionDir)lib" /q /s
-if not exist "$(SolutionDir)lib" mkdir "$(SolutionDir)lib"
-if not exist "$(SolutionDir)lib\header" mkdir "$(SolutionDir)lib\header"
-if not exist "$(SolutionDir)lib\header\Net" mkdir "$(SolutionDir)lib\header\Net"
-if not exist "$(SolutionDir)lib\header\Util" mkdir "$(SolutionDir)lib\header\Util"
-if not exist "$(SolutionDir)lib\header" mkdir "$(SolutionDir)lib\header"
-copy $(SolutionDir)x64\$(Configuration)\*.lib $(SolutionDir)lib\.
-copy $(ProjectDir)*.h $(SolutionDir)lib\header\.
-copy $(ProjectDir)Net\*.h $(SolutionDir)lib\header\Net\.
-copy $(ProjectDir)Util\*.h $(SolutionDir)lib\header\Util\.</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -132,16 +128,8 @@ copy $(ProjectDir)Util\*.h $(SolutionDir)lib\header\Util\.</Command>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PostBuildEvent>
-      <Command>if exist "$(SolutionDir)lib" rmdir "$(SolutionDir)lib" /q /s
-if not exist "$(SolutionDir)lib" mkdir "$(SolutionDir)lib"
-if not exist "$(SolutionDir)lib\header" mkdir "$(SolutionDir)lib\header"
-if not exist "$(SolutionDir)lib\header\Net" mkdir "$(SolutionDir)lib\header\Net"
-if not exist "$(SolutionDir)lib\header\Util" mkdir "$(SolutionDir)lib\header\Util"
-if not exist "$(SolutionDir)lib\header" mkdir "$(SolutionDir)lib\header"
-copy $(SolutionDir)x64\$(Configuration)\*.lib $(SolutionDir)lib\.
-copy $(ProjectDir)*.h $(SolutionDir)lib\header\.
-copy $(ProjectDir)Net\*.h $(SolutionDir)lib\header\Net\.
-copy $(ProjectDir)Util\*.h $(SolutionDir)lib\header\Util\.</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -159,16 +147,8 @@ copy $(ProjectDir)Util\*.h $(SolutionDir)lib\header\Util\.</Command>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PostBuildEvent>
-      <Command>if exist "$(SolutionDir)lib" rmdir "$(SolutionDir)lib" /q /s
-if not exist "$(SolutionDir)lib" mkdir "$(SolutionDir)lib"
-if not exist "$(SolutionDir)lib\header" mkdir "$(SolutionDir)lib\header"
-if not exist "$(SolutionDir)lib\header\Net" mkdir "$(SolutionDir)lib\header\Net"
-if not exist "$(SolutionDir)lib\header\Util" mkdir "$(SolutionDir)lib\header\Util"
-if not exist "$(SolutionDir)lib\header" mkdir "$(SolutionDir)lib\header"
-copy $(SolutionDir)x64\$(Configuration)\*.lib $(SolutionDir)lib\.
-copy $(ProjectDir)*.h $(SolutionDir)lib\header\.
-copy $(ProjectDir)Net\*.h $(SolutionDir)lib\header\Net\.
-copy $(ProjectDir)Util\*.h $(SolutionDir)lib\header\Util\.</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -190,16 +170,8 @@ copy $(ProjectDir)Util\*.h $(SolutionDir)lib\header\Util\.</Command>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PostBuildEvent>
-      <Command>if exist "$(SolutionDir)lib" rmdir "$(SolutionDir)lib" /q /s
-if not exist "$(SolutionDir)lib" mkdir "$(SolutionDir)lib"
-if not exist "$(SolutionDir)lib\header" mkdir "$(SolutionDir)lib\header"
-if not exist "$(SolutionDir)lib\header\Net" mkdir "$(SolutionDir)lib\header\Net"
-if not exist "$(SolutionDir)lib\header\Util" mkdir "$(SolutionDir)lib\header\Util"
-if not exist "$(SolutionDir)lib\header" mkdir "$(SolutionDir)lib\header"
-copy $(SolutionDir)x64\$(Configuration)\*.lib $(SolutionDir)lib\.
-copy $(ProjectDir)*.h $(SolutionDir)lib\header\.
-copy $(ProjectDir)Net\*.h $(SolutionDir)lib\header\Net\.
-copy $(ProjectDir)Util\*.h $(SolutionDir)lib\header\Util\.</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -213,6 +185,7 @@ copy $(ProjectDir)Util\*.h $(SolutionDir)lib\header\Util\.</Command>
     <ClInclude Include="pch.h" />
     <ClInclude Include="ServerLibrary.h" />
     <ClInclude Include="Util\RingBuffer.h" />
+    <ClInclude Include="Util\SendBuffer.h" />
     <ClInclude Include="Util\ThreadManager.h" />
     <ClInclude Include="Util\Types.h" />
   </ItemGroup>
@@ -230,6 +203,7 @@ copy $(ProjectDir)Util\*.h $(SolutionDir)lib\header\Util\.</Command>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="Util\RingBuffer.cpp" />
+    <ClCompile Include="Util\SendBuffer.cpp" />
     <ClCompile Include="Util\ThreadManager.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

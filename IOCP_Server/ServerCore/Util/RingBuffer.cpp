@@ -5,6 +5,8 @@ RingBuffer::RingBuffer(int32 bufferSize) : _bufferSize(bufferSize)
 {
 	_capacity = bufferSize * BUFFER_COUNT;
 	_buffer.resize(_capacity);
+	_writePos = 0;
+	_readPos = 0;
 }
 
 RingBuffer::~RingBuffer()

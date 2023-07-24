@@ -30,10 +30,8 @@ bool IocpCore::Dispatch(uint32 timeoutMs)
 	DWORD numOfBytes = 0;
 	ULONG_PTR key = 0;
 	IocpEvent* iocpEvent = nullptr;
-
-	bool bSuccess = ::GetQueuedCompletionStatus(_iocpHandle, &numOfBytes, &key, reinterpret_cast<LPOVERLAPPED*>(&iocpEvent), timeoutMs);
 	
-	if (bSuccess == TRUE && key != 0 && numOfBytes != 0 && iocpEvent != NULL)
+	if (::GetQueuedCompletionStatus(_iocpHandle, &numOfBytes, &key, reinterpret_cast<LPOVERLAPPED*>(&iocpEvent), timeoutMs))
 	{
 		SessionRef session = iocpEvent->ownerSession;
 		session->Dispatch(iocpEvent, numOfBytes);
