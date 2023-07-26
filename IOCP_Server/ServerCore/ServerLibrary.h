@@ -46,6 +46,8 @@ using namespace std;
 // TODO: 필수 헤더 파일
 //-------------------------------------------------------------------//
 #include "Util/Types.h"
+#include "Util/Clock.h"
+#include "Util/Logger.h"
 #include "Util/ThreadManager.h"
 #include "Util/RingBuffer.h"
 #include "Util/SendBuffer.h"

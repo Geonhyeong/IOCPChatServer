@@ -13,7 +13,7 @@ int main()
 
 	ServerEntry::GetInstance().Start(conf);
 	
-	printf("아무 키나 누를 때까지 대기합니다.\n");
+	SLog(L"Enter 'quit' command to close server...");
 	while (true)
 	{
 		string inputCmd;
@@ -25,7 +25,8 @@ int main()
 		}
 	}
 
-	ServerEntry::GetInstance().Close();
-
+	if (ServerEntry::GetInstance().Close() == false)
+		SLogErr(L"Failed to server closed...");
+	
 	return 0;
 }

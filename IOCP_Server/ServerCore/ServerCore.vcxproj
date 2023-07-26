@@ -184,6 +184,8 @@
     <ClInclude Include="Net\SocketUtils.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="ServerLibrary.h" />
+    <ClInclude Include="Util\Clock.h" />
+    <ClInclude Include="Util\Logger.h" />
     <ClInclude Include="Util\RingBuffer.h" />
     <ClInclude Include="Util\SendBuffer.h" />
     <ClInclude Include="Util\ThreadManager.h" />
@@ -202,6 +204,8 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="Util\Clock.cpp" />
+    <ClCompile Include="Util\Logger.cpp" />
     <ClCompile Include="Util\RingBuffer.cpp" />
     <ClCompile Include="Util\SendBuffer.cpp" />
     <ClCompile Include="Util\ThreadManager.cpp" />

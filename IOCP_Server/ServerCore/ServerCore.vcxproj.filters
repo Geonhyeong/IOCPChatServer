@@ -52,6 +52,12 @@
     <ClInclude Include="Util\SendBuffer.h">
       <Filter>Util</Filter>
     </ClInclude>
+    <ClInclude Include="Util\Logger.h">
+      <Filter>Util</Filter>
+    </ClInclude>
+    <ClInclude Include="Util\Clock.h">
+      <Filter>Util</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -80,6 +86,12 @@
       <Filter>Util</Filter>
     </ClCompile>
     <ClCompile Include="Util\SendBuffer.cpp">
+      <Filter>Util</Filter>
+    </ClCompile>
+    <ClCompile Include="Util\Logger.cpp">
+      <Filter>Util</Filter>
+    </ClCompile>
+    <ClCompile Include="Util\Clock.cpp">
       <Filter>Util</Filter>
     </ClCompile>
   </ItemGroup>

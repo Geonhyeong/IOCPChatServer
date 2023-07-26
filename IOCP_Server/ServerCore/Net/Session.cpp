@@ -41,7 +41,7 @@ void Session::Accept(SOCKET acceptSocket)
 {
 	if (_state != SessionState::DISCONNECT)
 	{
-		// TODO : LOG
+		SLogErr(L"Session::Accept(), but session is connected.");
 		return;
 	}
 
@@ -71,10 +71,7 @@ void Session::Send(SendBufferRef sendBuffer)
 	// 
 
 	if (_state != SessionState::CONNECT)
-	{
-		// TODO : LOG
-		return;
-	}
+		SLogErr(L"Session::Send(), but session is disconnected.");
 
 	bool registerSend = false;
 	{
@@ -100,10 +97,7 @@ void Session::Disconnect()
 void Session::RegisterAccept()
 {
 	if (_state != SessionState::DISCONNECT)
-	{
-		// TODO : LOG
-		return;
-	}
+		SLogErr(L"Session::RegisterAccept(), but session is connected.");
 
 	DWORD bytesReceived = 0;
 	if (false == SocketUtils::AcceptEx(_acceptSocket, _socket, _recvBuffer.WritePos(), 0,
@@ -112,8 +106,8 @@ void Session::RegisterAccept()
 		const int32 errorCode = ::WSAGetLastError();
 		if (errorCode != WSA_IO_PENDING)
 		{
-			// TODO : LOG
 			_acceptEvent.ownerSession = nullptr;
+			SLogErr(L"AcceptEx is failed : %d", errorCode);
 			return;
 		}
 	}
@@ -124,10 +118,7 @@ void Session::RegisterAccept()
 void Session::RegisterRecv()
 {
 	if (_state != SessionState::CONNECT)
-	{
-		// TODO : LOG
-		return;
-	}
+		SLogErr(L"Session::RegisterRecv(), but session is disconnected.");
 
 	_recvEvent.Init();
 	_recvEvent.ownerSession = shared_from_this();
@@ -140,10 +131,11 @@ void Session::RegisterRecv()
 	DWORD flags = 0;
 	if (::WSARecv(_socket, &wsaBuf, 1, &numOfBytes, &flags, &_recvEvent, nullptr) == SOCKET_ERROR)
 	{
-		if (::WSAGetLastError() != WSA_IO_PENDING)
+		const int32 errorCode = ::WSAGetLastError();
+		if (errorCode != WSA_IO_PENDING)
 		{
-			// TODO : LOG
 			_recvEvent.ownerSession = nullptr;
+			SLogErr(L"WSARecv is failed : %d", errorCode);
 		}
 	}
 }
@@ -151,10 +143,7 @@ void Session::RegisterRecv()
 void Session::RegisterSend()
 {
 	if (_state != SessionState::CONNECT)
-	{
-		// TODO : LOG
-		return;
-	}
+		SLogErr(L"Session::RegisterSend(), but session is disconnected.");
 
 	_sendEvent.Init();
 	_sendEvent.ownerSession = shared_from_this();
@@ -188,10 +177,10 @@ void Session::RegisterSend()
 		int32 errorCode = ::WSAGetLastError();
 		if (errorCode != WSA_IO_PENDING)
 		{
-			// TODO : LOG
 			_sendEvent.ownerSession = nullptr;
 			_sendEvent.sendBuffers.clear(); // RELEASE_REF
 			_sendRegistered.store(false);
+			SLogErr(L"WSASend is failed : %d", errorCode);
 		}
 	}
 }
@@ -199,20 +188,18 @@ void Session::RegisterSend()
 void Session::RegisterDisconnet()
 {
 	if (_state != SessionState::CONNECT)
-	{
-		// TODO : LOG
-		return;
-	}
+		SLogErr(L"Session::RegisterDisconnect(), but session is disconnected.");
 
 	_disconnectEvent.Init();
 	_disconnectEvent.ownerSession = shared_from_this();
 
 	if (SocketUtils::DisconnectEx(_socket, &_disconnectEvent, TF_REUSE_SOCKET, 0))
 	{
-		if (::WSAGetLastError() != WSA_IO_PENDING)
+		int32 errorCode = ::WSAGetLastError();
+		if (errorCode != WSA_IO_PENDING)
 		{
-			// TODO : LOG
 			_disconnectEvent.ownerSession = nullptr;
+			SLogErr(L"DisconnectEx is failed : %d", errorCode);
 		}
 	}
 }
@@ -242,7 +229,7 @@ void Session::ProcessAccept()
 	// 새로운 소켓을 IOCP에 등록
 	IocpCore::GetInstance().Register(_socket);
 
-	// TODO : 컨텐츠 코드 호출
+	// 컨텐츠 코드 호출
 	OnConnected();
 
 	// 수신 등록
@@ -255,14 +242,14 @@ void Session::ProcessRecv(int32 numOfBytes)
 
 	if (numOfBytes == 0)
 	{
-		// TODO : LOG
+		SLog(L"Session::ProcessRecv() => Disconnect signal is received.");
 		Disconnect();
 		return;
 	}
 
 	if (_recvBuffer.OnWrite(numOfBytes) == false)
 	{
-		// TODO : LOG
+		SLog(L"Session::ProcessRecv()::OnWrite() => RecvBuffer is overflowed.");
 		Disconnect();
 		return;
 	}
@@ -271,7 +258,7 @@ void Session::ProcessRecv(int32 numOfBytes)
 	int32 processLen = ParsingPacket(_recvBuffer.ReadPos(), dataSize);
 	if (processLen < 0 || dataSize < processLen || _recvBuffer.OnRead(processLen) == false)
 	{
-		// TODO : LOG
+		SLog(L"Session::ProcessRecv()::OnRead() => RecvBuffer is overflowed. dataSize : %d, processLen : %d", dataSize, processLen);
 		Disconnect();
 		return;
 	}
@@ -288,7 +275,7 @@ void Session::ProcessSend(int32 numOfBytes)
 
 	if (numOfBytes == 0)
 	{
-		// TODO : LOG
+		SLog(L"Session::ProcessSend() => Disconnect signal is received.");
 		Disconnect();
 		return;
 	}

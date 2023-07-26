@@ -7,12 +7,14 @@ thread_local SendBufferChunkRef	LSendBufferChunk;
 
 ThreadManager::ThreadManager()
 {
-    _threadId = 1;
+    _threadId = 0;
+    InitTLS(L"Main Thread");
 }
 
 ThreadManager::~ThreadManager()
 {
     Join();
+    DestroyTLS();
 }
 
 ThreadManager& ThreadManager::GetInstance()
@@ -41,15 +43,20 @@ void ThreadManager::Join()
             t.join();
     }
     _threads.clear();
+
+    SLog(L"All thread is joined.")
 }
 
 void ThreadManager::InitTLS(wstring name)
 {
     LThreadId = _threadId.fetch_add(1);
     LThreadName.assign(name);
+
+    SLog(L"Thread is running...");
 }
 
 void ThreadManager::DestroyTLS()
 {
     // TLS 영역 내 동적으로 할당된 객체를 해제
+    SLog(L"Thread is destroyed...");
 }

@@ -49,6 +49,7 @@ bool ServerEntry::Start(ServerConf serverConf)
     for (uint32 i = 1; i <= _serverConf.MaxWorkerThreadCount; i++)
         ThreadManager::GetInstance().Run([this]() { WorkerThread(); }, L"WorkerThread_" + to_wstring(i));
 
+    _isStart = true;
     return true;
 }
 

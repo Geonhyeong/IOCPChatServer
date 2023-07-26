@@ -44,7 +44,7 @@ bool IocpCore::Dispatch(uint32 timeoutMs)
 		case WAIT_TIMEOUT:
 			return false;
 		default:
-			// TODO : LOG
+			SLog(L"GQCS is failed : %d", errCode);
 			SessionRef session = iocpEvent->ownerSession;
 			session->Dispatch(iocpEvent, numOfBytes);
 			break;
