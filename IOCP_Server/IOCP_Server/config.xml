@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<App>
+  <Server>
+    <IP>127.0.0.1</IP>
+    <Port>7777</Port>
+    <BackLog>2147483647</BackLog>
+    <MaxWorkerThreadCount>5</MaxWorkerThreadCount>
+    <MaxSessionCount>100</MaxSessionCount>
+    <ReuseSessionWaitTimeSec>5</ReuseSessionWaitTimeSec>
+  </Server>
+</App>

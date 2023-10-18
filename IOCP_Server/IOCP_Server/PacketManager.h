@@ -1,66 +1,47 @@
 #pragma once
 #include "Packet.h"
-#include "RoomManager.h"
-#include "UserManager.h"
-#include "RedisManager.h"
-#include "DBConnectionPool.h"
 #include "DBInfo.h"
 
-#include <functional>
-#include <unordered_map>
-#include <mutex>
-#include <thread>
-#include <queue>
-
-using PacketFunction = std::function<void(UINT32, UINT16, char*)>;
+using PacketFunction = function<void(int32, uint16, BYTE*)>;
 
 class PacketManager
 {
-public:
-	PacketManager() = default;
+private:
+	PacketManager();
 	~PacketManager();
 
-	void	Init(const UINT32 maxClientCount);
-	void	Run(const UINT32 maxDBThreadCount);
+public:
+	static PacketManager& GetInstance();
+
+	void	Run(const uint32 maxDBThreadCount, const int32 maxRoomCount, const int32 maxRoomUserCount, const int32 beginRoomCount);
 	void	End();
 
-	void	PushSystemPacket(PacketInfo systemPacket);
-	void	PushPacket(UINT32 sessionId, UINT32 packetSize, char* packet);
+	void	Push(int32 sessionId);
 
 private:
-	PacketInfo	PopPacket();
-	void		ProcessPacket();
+	void			Init();
 
-	void			PushChatLog(UINT32 sessionId, UINT32 roomNumber, const char* userId, const char* chatMsg);
+	PacketInfo		Pop();
+	void			PushChatLog(int32 sessionId, int32 roomNumber, const char* userId, const char* chatMsg);
 	DB_CHATLOG_INFO	PopChatLog();
+
+	void			ProcessPacket();
 	void			ProcessDB();
 
 #pragma region HANDLER FUNCTION
-	void	ProcessUserConnect(UINT32 sessionId, UINT16 packetSize, char* packet);
-	void	ProcessUserDisconnect(UINT32 sessionId, UINT16 packetSize, char* packet);
-
-	void	ProcessLogin(UINT32 sessionId, UINT16 packetSize, char* packet);
-	void	ProcessLogout(UINT32 sessionId, UINT16 packetSize, char* packet);
-	void	ProcessRoomEnter(UINT32 sessionId, UINT16 packetSize, char* packet);
-	void	ProcessRoomLeave(UINT32 sessionId, UINT16 packetSize, char* packet);
-	void	ProcessChat(UINT32 sessionId, UINT16 packetSize, char* packet);
+	void	ProcessLogin(int32 sessionId, uint16 packetSize, BYTE* packet);
+	void	ProcessLogout(int32 sessionId, uint16 packetSize, BYTE* packet);
+	void	ProcessRoomEnter(int32 sessionId, uint16 packetSize, BYTE* packet);
+	void	ProcessRoomLeave(int32 sessionId, uint16 packetSize, BYTE* packet);
+	void	ProcessChat(int32 sessionId, uint16 packetSize, BYTE* packet);
 #pragma endregion
 
-public:
-	std::function<void(UINT32, UINT16, char*)>	SendPacketFunc;
-
 private:
-	std::unordered_map<UINT16, PacketFunction>	_packetFuncDict;
-	std::unique_ptr<RoomManager>				_roomManager;
-	std::unique_ptr<UserManager>				_userManager;
-	std::unique_ptr<RedisManager>				_redisManager;
-	std::unique_ptr<DBConnectionPool>			_dbConnectionPool;
+	unordered_map<uint16, PacketFunction>	_packetFuncDict;
 
-	bool				_isProcessThread = false;
-	std::thread			_packetThread;
-	std::thread			_dbThread;
+	bool					_isProcessThread = false;
 	
-	std::mutex					_packetLock, _chatLogLock;
-	std::queue<UINT32>			_packetSessionIdQueue;
-	std::queue<DB_CHATLOG_INFO>	_chatLogQueue;
+	USE_LOCK;
+	queue<int32>			_packetSessionIdQueue;
+	queue<DB_CHATLOG_INFO>	_chatLogQueue;
 };

@@ -9,7 +9,7 @@ namespace DummyClient
         static void Main(string[] args)
         {
 			// DNS (Domain Name System)
-			IPEndPoint endPoint = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 2581);
+			IPEndPoint endPoint = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 7777);
 
 			Connector connector = new Connector();
 

@@ -1,51 +1,47 @@
+#include "pch.h"
 #include "User.h"
+#include "UserManager.h"
+
+User::User() : _packetQueue(USER_BUFFER_SIZE)
+{
+}
 
 User::~User()
 {
-	delete[] _userId;
-	delete[] _ringBuffer;
 }
 
-void User::Init(UINT32 sessionId)
+void User::SendPacket(uint16 size, BYTE* packet)
 {
-	_sessionId = sessionId;
+	SendBufferRef sendBuffer = SendBufferManager::GetInstance().Open(size);
+	CopyMemory(sendBuffer->Buffer(), &packet[0], size);
+	sendBuffer->Close(size);
 
-	_ringBuffer = new char[USER_BUFFER_SIZE];
+	Send(sendBuffer);
 }
 
-void User::Clear()
+uint16 User::Login(const char* nickname)
 {
-	memset(_userId, 0, sizeof(_userId));
-	_roomNumber = 0;
-	_curDomainState = USER_DOMAIN_STATE::NONE;
+	if (GetCurrentDomainState() >= USER_DOMAIN_STATE::LOGIN)
+		return (UINT16)ERROR_CODE::LOGIN_REDUNDANT_CONNECTION;
 
-	_writePos = 0;
-	_readPos = 0;
-}
-
-void User::Connect()
-{
-	_curDomainState = USER_DOMAIN_STATE::CONNECT;
-}
-
-void User::Login(const char* userId)
-{
 	_curDomainState = USER_DOMAIN_STATE::LOGIN;
-	std::memcpy(_userId, userId, MAX_ID_PWD_BYTE_LENGTH);
+	std::memcpy(_nickname, nickname, MAX_ID_PWD_BYTE_LENGTH);
 	
 	printf("sessionId(%d) is login\n", _sessionId);
+
+	return (UINT16)ERROR_CODE::LOGIN_SUCCESS;
 }
 
 void User::Logout()
 {
-	memset(_userId, 0, sizeof(_userId));
-	_roomNumber = 0;
-	_curDomainState = USER_DOMAIN_STATE::CONNECT;
+	if (GetCurrentDomainState() >= USER_DOMAIN_STATE::LOGIN)
+	{
+		memset(_nickname, 0, sizeof(_nickname));
+		_roomNumber = 0;
+		_curDomainState = USER_DOMAIN_STATE::CONNECT;
 	
-	_writePos = 0;
-	_readPos = 0;
-
-	printf("sessionId(%d) is logout\n", _sessionId);
+		printf("sessionId(%d) is logout\n", _sessionId);
+	}
 }
 
 void User::EnterRoom(UINT32 roomNumber)
@@ -60,48 +56,74 @@ void User::LeaveRoom()
 	_curDomainState = USER_DOMAIN_STATE::LOGIN;
 }
 
-void User::PushPacket(UINT32 packetSize, char* packet)
+void User::PushPacket(UINT32 packetSize, BYTE* packet)
 {
-	// lock이 필요 없는 이유
-	// - recv는 한 번에 하나의 쓰레드에서만 실행됨.
-	// - 또한 링버퍼이기 때문에 읽고 쓰는데에 멀티쓰레드 이슈는 없다.
-	
-	// 링버퍼
-	UINT32 remainDataSize = _writePos - _readPos;
-	if (remainDataSize == 0)
-		_writePos = _readPos = 0;
+	WRITE_LOCK;
 
-	if ((_writePos + packetSize) >= USER_BUFFER_SIZE)
+	CopyMemory(_packetQueue.WritePos(), packet, packetSize);
+	if (_packetQueue.OnWrite(packetSize) == false)
 	{
-		CopyMemory(&_ringBuffer[0], &_ringBuffer[_readPos], remainDataSize);
-		_readPos = 0;
-		_writePos = remainDataSize;
+		SLog(L"User::PushPacket()::OnWrite() => PacketQueue is overflowed.");
+		Disconnect();
+		return;
 	}
 
-	CopyMemory(&_ringBuffer[_writePos], packet, packetSize);
-	_writePos += packetSize;
+	_packetQueue.Clean();
 }
 
 PacketInfo User::PopPacket()
 {
-	// 버퍼 사이즈 검증
-	UINT32 remainDataSize = _writePos - _readPos;
-	if (remainDataSize < PACKET_HEADER_SIZE)	// 헤더 사이즈도 안되면 읽을 수 조차 없다.
+	WRITE_LOCK;
+
+	// 최소한 헤더는 파싱 가능해야 한다.
+	if (_packetQueue.DataSize() < PACKET_HEADER_SIZE)
 		return PacketInfo();
 
-	auto header = (PACKET_HEADER*)&_ringBuffer[_readPos];
+	PACKET_HEADER header = *(reinterpret_cast<PACKET_HEADER*>(_packetQueue.ReadPos()));
 
-	if (remainDataSize < header->packetSize)	// 아직 데이터 수신이 덜 됨.
+	if (_packetQueue.DataSize() < header.packetSize)	// 아직 데이터 수신이 덜 됨.
 		return PacketInfo();
 	
 	// PacketInfo 구조체로 wrapping
 	PacketInfo packet;
 	packet.sessionId = _sessionId;
-	packet.packetId = header->packetId;
-	packet.dataSize = header->packetSize;
-	packet.packetData = &_ringBuffer[_readPos];
+	packet.packetId = header.packetId;
+	packet.dataSize = header.packetSize;
+	packet.packetData = _packetQueue.ReadPos();
 
-	_readPos += header->packetSize;
+	if (_packetQueue.OnRead(header.packetSize) == false)
+	{
+		SLog(L"User::PopPacket()::OnRead() => PacketQueue is overflowed.");
+		Disconnect();
+		return PacketInfo();
+	}
 
+	_packetQueue.Clean();
 	return packet;
+}
+
+void User::OnConnected()
+{
+	_sessionId = USERS.Add(static_pointer_cast<User>(shared_from_this()));
+
+	_curDomainState = USER_DOMAIN_STATE::CONNECT;
+}
+
+int32 User::OnRecv(BYTE* buffer, int32 len)
+{
+	PACKETS.Push(_sessionId);
+	PushPacket(len, buffer);
+	
+	return len;
+}
+
+void User::OnSend(int32 len)
+{
+}
+
+void User::OnDisconnected()
+{
+	USERS.Remove(_sessionId);
+	
+	_curDomainState = USER_DOMAIN_STATE::DISCONNECT;
 }

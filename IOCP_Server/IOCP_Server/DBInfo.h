@@ -16,9 +16,9 @@
 
 struct DB_CHATLOG_INFO
 {
-	INT32 sessionId = 0;
+	int32 sessionId = 0;
     WCHAR userId[50] = { 0, };
     WCHAR chatMsg[500] = { 0, };
-	INT32 roomNumber = 0;
+	int32 roomNumber = 0;
     time_t dateTime = 0;
 };
