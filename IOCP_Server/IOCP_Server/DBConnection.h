@@ -1,5 +1,4 @@
 #pragma once
-
 #include <sql.h>
 #include <sqlext.h>
 #include <stdlib.h>
@@ -85,13 +84,13 @@ public:
 		}
 	}
 
-	INT32 GetRowcount()
+	int32 GetRowcount()
 	{
 		SQLLEN count = 0;
 		SQLRETURN ret = ::SQLRowCount(_statement, OUT &count);
 
 		if (ret == SQL_SUCCESS || ret == SQL_SUCCESS_WITH_INFO)
-			return static_cast<INT32>(count);
+			return static_cast<int32>(count);
 
 		return -1;
 	}
@@ -103,17 +102,17 @@ public:
 		::SQLFreeStmt(_statement, SQL_CLOSE);
 	}
 
-	bool BindParam(INT32 paramIndex, INT32* value, SQLLEN* index)
+	bool BindParam(int32 paramIndex, int32* value, SQLLEN* index)
 	{
-		return BindParam(paramIndex, SQL_C_LONG, SQL_INTEGER, sizeof(INT32), value, index);
+		return BindParam(paramIndex, SQL_C_LONG, SQL_INTEGER, sizeof(int32), value, index);
 	}
 
-	bool BindParam(INT32 paramIndex, TIMESTAMP_STRUCT* value, SQLLEN* index) 
+	bool BindParam(int32 paramIndex, TIMESTAMP_STRUCT* value, SQLLEN* index) 
 	{
 		return BindParam(paramIndex, SQL_C_TYPE_TIMESTAMP, SQL_TYPE_TIMESTAMP, sizeof(TIMESTAMP_STRUCT), value, index);
 	}
 
-	bool BindParam(INT32 paramIndex, const WCHAR* str, SQLLEN* index)
+	bool BindParam(int32 paramIndex, const WCHAR* str, SQLLEN* index)
 	{
 		SQLULEN size = static_cast<SQLULEN>((std::wcslen(str) + 1) * 2);
 		*index = SQL_NTSL;
@@ -124,17 +123,17 @@ public:
 			return BindParam(paramIndex, SQL_C_WCHAR, SQL_WVARCHAR, size, (SQLPOINTER)str, index);
 	}
 
-	bool BindCol(INT32 columnIndex, INT32* value, SQLLEN* index)
+	bool BindCol(int32 columnIndex, int32* value, SQLLEN* index)
 	{
-		return BindCol(columnIndex, SQL_C_LONG, sizeof(INT32), value, index);
+		return BindCol(columnIndex, SQL_C_LONG, sizeof(int32), value, index);
 	}
 
-	bool BindCol(INT32 columnIndex, TIMESTAMP_STRUCT* value, SQLLEN* index)
+	bool BindCol(int32 columnIndex, TIMESTAMP_STRUCT* value, SQLLEN* index)
 	{
 		return BindCol(columnIndex, SQL_C_TYPE_TIMESTAMP, sizeof(TIMESTAMP_STRUCT), value, index);
 	}
 
-	bool BindCol(INT32 columnIndex, WCHAR* str, INT32 size, SQLLEN* index)
+	bool BindCol(int32 columnIndex, WCHAR* str, int32 size, SQLLEN* index)
 	{
 		return BindCol(columnIndex, SQL_C_WCHAR, size, str, index);
 	}

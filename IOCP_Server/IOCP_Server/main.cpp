@@ -1,25 +1,40 @@
-#include "ChatServer.h"
+#include "pch.h"
+#include "ServerEntry.h"
+#include "User.h"
 
-#include <string>
-#include <iostream>
+ServerConf GetServerConf()
+{
+	auto elem = CONFIG->FirstChildElement("App")->FirstChildElement("Server");
 
-const UINT16 SERVER_PORT = 2581;
-const UINT16 MAX_CLIENT = 10;			// 접속 가능한 최대 클라이언트 수
-const UINT32 MAX_IO_WORKER_THREAD = 1;	// 쓰레드 풀에 넣을 쓰레드 수
-const UINT32 MAX_DB_THREAD = 1;	// DB 작업을 맡을 쓰레드 수
+	ServerConf conf;
+	conf.IpAddress = Utils::ToWString(elem->FirstChildElement("IP")->GetText());
+	conf.Port = (uint16)elem->FirstChildElement("Port")->UnsignedText();
+	conf.BackLog = (int32)elem->FirstChildElement("BackLog")->IntText();
+	conf.MaxWorkerThreadCount = (uint32)elem->FirstChildElement("MaxWorkerThreadCount")->UnsignedText();
+	conf.MaxSessionCount = (uint32)elem->FirstChildElement("MaxSessionCount")->UnsignedText();
+	conf.ReuseSessionWaitTimeSec = (uint64)elem->FirstChildElement("ReuseSessionWaitTimeSec")->Int64Text();
+
+	return conf;
+}
 
 int main()
 {
-	ChatServer server;
-	server.Init(MAX_IO_WORKER_THREAD);
-	server.BindAndListen(SERVER_PORT);
-	server.Run(MAX_CLIENT, MAX_DB_THREAD);
+	ServerConf serverConf = GetServerConf();
 
-	printf("아무 키나 누를 때까지 대기합니다.\n");
+	if (SENTRY.Start(serverConf, make_shared<User>) == false)
+	{
+		SLog(L"Failed to start Server...");
+		return 0;
+	}
+
+	// TODO : 패킷 매니저 쓰레드들을 실행
+	PACKETS.Run(5, 100, 11, 1000);
+
+	SLog(L"Enter 'quit' command to close server...");
 	while (true)
 	{
-		std::string inputCmd;
-		std::getline(std::cin, inputCmd);
+		string inputCmd;
+		::getline(cin, inputCmd);
 
 		if (inputCmd == "quit")
 		{
@@ -27,7 +42,9 @@ int main()
 		}
 	}
 
-	server.End();
+	PACKETS.End();
+	if (SENTRY.Close() == false)
+		SLog(L"Failed to Server Closed...");
 
 	return 0;
 }

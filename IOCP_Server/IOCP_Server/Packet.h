@@ -1,9 +1,6 @@
 #pragma once
 
-#define WIN32_LEAN_AND_MEAN
-#include <Windows.h>
-
-enum class PACKET_ID : UINT16
+enum class PACKET_ID : uint16
 {
 	// SYSTEM
 	SYS_USER_CONNECT = 11,
@@ -31,20 +28,20 @@ enum class PACKET_ID : UINT16
 // 클라이언트가 보낸 패킷을 Wrapping 하는 구조체
 struct PacketInfo
 {
-	UINT32 sessionId = 0;
-	UINT16 packetId = 0;
-	UINT16 dataSize = 0;			// packetData의 사이즈
-	char* packetData = nullptr;
+	int32 sessionId = 0;
+	uint16 packetId = 0;
+	uint16 dataSize = 0;			// packetData의 사이즈
+	BYTE* packetData = nullptr;
 };
 
 #pragma pack(push, 1)
 struct PACKET_HEADER
 {
-	UINT16 packetSize;	// 패킷 헤더를 포함한 전체 사이즈
-	UINT16 packetId;
-	UINT8 type;			// 압축 여부, 암호화 여부 등 속성을 알아내는 값
+	uint16 packetSize;	// 패킷 헤더를 포함한 전체 사이즈
+	uint16 packetId;
+	uint8 type;			// 압축 여부, 암호화 여부 등 속성을 알아내는 값
 };
-const UINT16 PACKET_HEADER_SIZE = sizeof(PACKET_HEADER);
+const uint16 PACKET_HEADER_SIZE = sizeof(PACKET_HEADER);
 
 #pragma region SYSTEM
 
@@ -60,14 +57,14 @@ const int MAX_ID_PWD_BYTE_LENGTH = 32;
 struct LOGIN_REQ_PACKET : public PACKET_HEADER
 {
 	char userId[MAX_ID_PWD_BYTE_LENGTH] = { 0, };
-	INT32 accountDbId;
-	INT32 token;
-	INT32 isDummy;
+	int32 accountDbId;
+	int32 token;
+	int32 isDummy;
 };
 
 struct LOGIN_RES_PACKET : public PACKET_HEADER
 {
-	UINT16 result;
+	uint16 result;
 };
 
 struct LOGOUT_REQ_PACKET : public PACKET_HEADER
@@ -76,17 +73,17 @@ struct LOGOUT_REQ_PACKET : public PACKET_HEADER
 
 struct LOGOUT_RES_PACKET : public PACKET_HEADER
 {
-	UINT16 result;
+	uint16 result;
 };
 
 struct ROOM_ENTER_REQ_PACKET : public PACKET_HEADER
 {
-	UINT32 roomNumber;
+	uint32 roomNumber;
 };
 
 struct ROOM_ENTER_RES_PACKET : public PACKET_HEADER
 {
-	UINT16 result;
+	uint16 result;
 };
 
 struct ROOM_LEAVE_REQ_PACKET : public PACKET_HEADER
@@ -95,13 +92,13 @@ struct ROOM_LEAVE_REQ_PACKET : public PACKET_HEADER
 
 struct ROOM_LEAVE_RES_PACKET : public PACKET_HEADER
 {
-	UINT16 result;
+	uint16 result;
 };
 
 const int MAX_USER_LIST_BYTE_LENGTH = MAX_ID_PWD_BYTE_LENGTH * 128;
 struct ROOM_USER_LIST_PACKET : public PACKET_HEADER
 {
-	UINT32 userCount;
+	uint32 userCount;
 	char userList[MAX_USER_LIST_BYTE_LENGTH] = { 0, };
 };
 
@@ -109,13 +106,13 @@ const int MAX_CHAT_MSG_SIZE = 256;
 struct CHAT_REQ_PACKET : public PACKET_HEADER
 {
 	char chatMsg[MAX_CHAT_MSG_SIZE] = { 0, };
-	INT64 requestTimeTick;
+	int64 requestTimeTick;
 };
 
 struct CHAT_RES_PACKET : public PACKET_HEADER
 {
-	UINT16 result;
-	INT64 requestTimeTick;
+	uint16 result;
+	int64 requestTimeTick;
 };
 
 struct CHAT_BROADCAST_PACKET : public PACKET_HEADER

@@ -9,8 +9,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LoginServer", "LoginServer\
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ServerCore", "ServerCore\ServerCore.vcxproj", "{0CA0B4E3-F8AC-456F-870B-86DD295DFE5E}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ChatServer", "ChatServer\ChatServer.vcxproj", "{CA73B1D7-D656-4994-A192-01E2644D5FEA}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -53,16 +51,6 @@ Global
 		{0CA0B4E3-F8AC-456F-870B-86DD295DFE5E}.Release|x64.Build.0 = Release|x64
 		{0CA0B4E3-F8AC-456F-870B-86DD295DFE5E}.Release|x86.ActiveCfg = Release|Win32
 		{0CA0B4E3-F8AC-456F-870B-86DD295DFE5E}.Release|x86.Build.0 = Release|Win32
-		{CA73B1D7-D656-4994-A192-01E2644D5FEA}.Debug|Any CPU.ActiveCfg = Debug|Win32
-		{CA73B1D7-D656-4994-A192-01E2644D5FEA}.Debug|x64.ActiveCfg = Debug|x64
-		{CA73B1D7-D656-4994-A192-01E2644D5FEA}.Debug|x64.Build.0 = Debug|x64
-		{CA73B1D7-D656-4994-A192-01E2644D5FEA}.Debug|x86.ActiveCfg = Debug|Win32
-		{CA73B1D7-D656-4994-A192-01E2644D5FEA}.Debug|x86.Build.0 = Debug|Win32
-		{CA73B1D7-D656-4994-A192-01E2644D5FEA}.Release|Any CPU.ActiveCfg = Release|Win32
-		{CA73B1D7-D656-4994-A192-01E2644D5FEA}.Release|x64.ActiveCfg = Release|x64
-		{CA73B1D7-D656-4994-A192-01E2644D5FEA}.Release|x64.Build.0 = Release|x64
-		{CA73B1D7-D656-4994-A192-01E2644D5FEA}.Release|x86.ActiveCfg = Release|Win32
-		{CA73B1D7-D656-4994-A192-01E2644D5FEA}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

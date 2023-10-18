@@ -23,6 +23,7 @@
 #include <array>
 #include <map>
 #include <set>
+#include <unordered_map>
 
 using namespace std;
 
@@ -43,19 +44,23 @@ using namespace std;
 	}								\
 }
 
+#define USE_LOCK	Lock _lock;
+#define READ_LOCK	ReadLockGuard readLockGuard(_lock, typeid(this).name());
+#define WRITE_LOCK	WriteLockGuard writeLockGuard(_lock, typeid(this).name());
+
 // TODO: 필수 헤더 파일
 //-------------------------------------------------------------------//
-#include "Util/Types.h"
-#include "Util/Clock.h"
-#include "Util/Logger.h"
-#include "Util/ThreadManager.h"
-#include "Util/RingBuffer.h"
-#include "Util/SendBuffer.h"
+#include "Types.h"
+#include "Clock.h"
+#include "Logger.h"
+#include "Lock.h"
+#include "ThreadManager.h"
+#include "RingBuffer.h"
+#include "SendBuffer.h"
 
-#include "Net/NetAddress.h"
-#include "Net/SocketUtils.h"
-
-#include "Net/IocpCore.h"
-#include "Net/IocpEvent.h"
-#include "Net/Session.h"
-#include "Net/Acceptor.h"
+#include "NetAddress.h"
+#include "SocketUtils.h"
+#include "IocpCore.h"
+#include "IocpEvent.h"
+#include "Session.h"
+#include "Acceptor.h"

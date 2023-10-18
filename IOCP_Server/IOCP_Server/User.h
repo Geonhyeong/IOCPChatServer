@@ -1,9 +1,7 @@
 #pragma once
 #include "Packet.h"
 
-#include <string>
-
-constexpr UINT32 USER_BUFFER_SIZE = 8096;
+constexpr int32 USER_BUFFER_SIZE = 8096;
 enum class USER_DOMAIN_STATE
 {
 	NONE = 0,
@@ -13,35 +11,41 @@ enum class USER_DOMAIN_STATE
 	ROOM = 4,
 };
 
-class User
+class User : public Session
 {
 public:
-	User() = default;
+	User();
 	~User();
 
-	void				Init(UINT32 sessionId);
-	void				Clear();
-	void				Connect();
-	void				Login(const char* userId);
+	void				SendPacket(uint16 size, BYTE* packet);
+
+	uint16				Login(const char* nickname);
 	void				Logout();
 	void				EnterRoom(UINT32 roomNumber);
 	void				LeaveRoom();
 
-	UINT32				GetSessionId() { return _sessionId; }
-	char*				GetUserId() { return _userId; }
+	int32				GetSessionId() { return _sessionId; }
+	char*				GetNickname() { return _nickname; }
 	UINT32				GetCurrentRoom() { return _roomNumber; }
 	USER_DOMAIN_STATE	GetCurrentDomainState() { return _curDomainState; }
 
-	void				PushPacket(UINT32 packetSize, char* packet);
 	PacketInfo			PopPacket();
 
+protected:
+	virtual void OnConnected() override;
+	virtual int32 OnRecv(BYTE* buffer, int32 len) override;
+	virtual void OnSend(int32 len) override;
+	virtual void OnDisconnected() override;
+
 private:
-	UINT32				_sessionId = 0;
-	char				_userId[MAX_ID_PWD_BYTE_LENGTH] = { 0, };
-	UINT32				_roomNumber = 0;
+	void				PushPacket(UINT32 packetSize, BYTE* packet);
+
+private:
+	int32				_sessionId = 0;
+	char				_nickname[MAX_ID_PWD_BYTE_LENGTH] = { 0, };
+	int32				_roomNumber = 0;
 	USER_DOMAIN_STATE	_curDomainState = USER_DOMAIN_STATE::NONE;
 
-	char*		_ringBuffer = nullptr;		// 패킷을 담을 링버퍼
-	UINT32		_writePos = 0;
-	UINT32		_readPos = 0;
+	USE_LOCK;
+	RingBuffer	_packetQueue;
 };

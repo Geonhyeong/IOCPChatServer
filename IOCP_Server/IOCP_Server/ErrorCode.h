@@ -1,23 +1,5 @@
 #pragma once
-
-#define WIN32_LEAN_AND_MEAN
-#include <Windows.h>
-
-#define CRASH(cause)						\
-{											\
-	UINT32* crash = nullptr;				\
-	__analysis_assume(crash != nullptr);	\
-	*crash = 0xDEADBEEF;					\
-}
-
-#define ASSERT_CRASH(expr)			\
-{									\
-	if (!(expr))					\
-	{								\
-		CRASH("ASSERT_CRASH");		\
-		__analysis_assume(expr);	\
-	}								\
-}
+#include "pch.h"
 
 enum class ERROR_CODE : UINT16
 {

@@ -23,9 +23,10 @@ ServerEntry& ServerEntry::GetInstance()
     return *instance;
 }
 
-bool ServerEntry::Start(ServerConf serverConf)
+bool ServerEntry::Start(ServerConf serverConf, SessionFactory sessionFactory)
 {
     _serverConf = serverConf;
+    _sessionFactory = sessionFactory;
 
     if (_isStart == true)
         return false;
@@ -69,11 +70,11 @@ bool ServerEntry::Close()
 void ServerEntry::CreateSessions(uint32 maxSessionCount)
 {
     _sessions.reserve(maxSessionCount);
-
+    
     for (uint32 i = 0; i < maxSessionCount; i++)
     {
-        // TODO : 나중에 Session을 상속받는 컨텐츠단의 Session에 접근하기 위해서 SessionFactory를 적용하여야 한다. 
-        SessionRef session = make_shared<Session>();
+        // 나중에 Session을 상속받는 컨텐츠단의 Session에 접근하기 위해서 SessionFactory를 적용하여야 한다. 
+        SessionRef session = _sessionFactory();
 
         _sessions.push_back(session);
     }

@@ -11,6 +11,7 @@ struct ServerConf
 	uint64 ReuseSessionWaitTimeSec;
 };
 
+using SessionFactory = function<SessionRef(void)>;
 class ServerEntry
 {
 private:
@@ -20,7 +21,7 @@ private:
 public:
 	static ServerEntry& GetInstance();
 
-	bool Start(ServerConf serverConf);
+	bool Start(ServerConf serverConf, SessionFactory sessionFactory);
 	bool Close();
 
 private:
@@ -36,4 +37,6 @@ private:
 	bool _isStart;
 	bool _isAcceptRun;
 	bool _isWorkerRun;
+
+	SessionFactory _sessionFactory;
 };

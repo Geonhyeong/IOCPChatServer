@@ -18,6 +18,44 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Acceptor.cpp" />
+    <ClCompile Include="Clock.cpp" />
+    <ClCompile Include="IocpCore.cpp" />
+    <ClCompile Include="Lock.cpp" />
+    <ClCompile Include="Logger.cpp" />
+    <ClCompile Include="NetAddress.cpp" />
+    <ClCompile Include="pch.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="RingBuffer.cpp" />
+    <ClCompile Include="SendBuffer.cpp" />
+    <ClCompile Include="ServerEntry.cpp" />
+    <ClCompile Include="Session.cpp" />
+    <ClCompile Include="SocketUtils.cpp" />
+    <ClCompile Include="ThreadManager.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Acceptor.h" />
+    <ClInclude Include="Clock.h" />
+    <ClInclude Include="IocpCore.h" />
+    <ClInclude Include="IocpEvent.h" />
+    <ClInclude Include="Lock.h" />
+    <ClInclude Include="Logger.h" />
+    <ClInclude Include="NetAddress.h" />
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="RingBuffer.h" />
+    <ClInclude Include="SendBuffer.h" />
+    <ClInclude Include="ServerEntry.h" />
+    <ClInclude Include="ServerLibrary.h" />
+    <ClInclude Include="Session.h" />
+    <ClInclude Include="SocketUtils.h" />
+    <ClInclude Include="ThreadManager.h" />
+    <ClInclude Include="Types.h" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
@@ -72,23 +110,23 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(ProjectDir);$(IncludePath)</IncludePath>
-    <OutDir>$(SolutionDir)lib\$(Configuration)\</OutDir>
+    <OutDir>$(SolutionDir)Libraries\Lib\ServerCore\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)Intermediate\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(ProjectDir);$(IncludePath)</IncludePath>
-    <OutDir>$(SolutionDir)lib\$(Configuration)\</OutDir>
+    <OutDir>$(SolutionDir)Libraries\Lib\ServerCore\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)Intermediate\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(ProjectDir);$(IncludePath)</IncludePath>
-    <OutDir>$(SolutionDir)lib\$(Configuration)\</OutDir>
+    <OutDir>$(SolutionDir)Libraries\Lib\ServerCore\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)Intermediate\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(ProjectDir);$(IncludePath)</IncludePath>
-    <OutDir>$(SolutionDir)lib\$(Configuration)\</OutDir>
+    <OutDir>$(SolutionDir)Libraries\Lib\ServerCore\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)Intermediate\$(Configuration)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -98,6 +136,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <AdditionalIncludeDirectories>$(SolutionDir)Libraries\Include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -108,6 +147,9 @@
       <Command>
       </Command>
     </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>xcopy /Y "$(SolutionDir)ServerCore\*.h" "$(SolutionDir)Libraries\Include\ServerCore"</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -119,6 +161,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <AdditionalIncludeDirectories>$(SolutionDir)Libraries\Include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -131,6 +174,9 @@
       <Command>
       </Command>
     </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>xcopy /Y "$(SolutionDir)ServerCore\*.h" "$(SolutionDir)Libraries\Include\ServerCore"</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -140,6 +186,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <AdditionalIncludeDirectories>$(SolutionDir)Libraries\Include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -150,6 +197,9 @@
       <Command>
       </Command>
     </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>xcopy /Y "$(SolutionDir)ServerCore\*.h" "$(SolutionDir)Libraries\Include\ServerCore"</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -161,6 +211,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <AdditionalIncludeDirectories>$(SolutionDir)Libraries\Include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -173,43 +224,10 @@
       <Command>
       </Command>
     </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>xcopy /Y "$(SolutionDir)ServerCore\*.h" "$(SolutionDir)Libraries\Include\ServerCore"</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClInclude Include="Net\IocpCore.h" />
-    <ClInclude Include="Net\IocpEvent.h" />
-    <ClInclude Include="Net\Session.h" />
-    <ClInclude Include="ServerEntry.h" />
-    <ClInclude Include="Net\Acceptor.h" />
-    <ClInclude Include="Net\NetAddress.h" />
-    <ClInclude Include="Net\SocketUtils.h" />
-    <ClInclude Include="pch.h" />
-    <ClInclude Include="ServerLibrary.h" />
-    <ClInclude Include="Util\Clock.h" />
-    <ClInclude Include="Util\Logger.h" />
-    <ClInclude Include="Util\RingBuffer.h" />
-    <ClInclude Include="Util\SendBuffer.h" />
-    <ClInclude Include="Util\ThreadManager.h" />
-    <ClInclude Include="Util\Types.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="Net\IocpCore.cpp" />
-    <ClCompile Include="Net\Session.cpp" />
-    <ClCompile Include="ServerEntry.cpp" />
-    <ClCompile Include="Net\Acceptor.cpp" />
-    <ClCompile Include="Net\NetAddress.cpp" />
-    <ClCompile Include="Net\SocketUtils.cpp" />
-    <ClCompile Include="pch.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="Util\Clock.cpp" />
-    <ClCompile Include="Util\Logger.cpp" />
-    <ClCompile Include="Util\RingBuffer.cpp" />
-    <ClCompile Include="Util\SendBuffer.cpp" />
-    <ClCompile Include="Util\ThreadManager.cpp" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

@@ -1,9 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="ServerCore">
-      <UniqueIdentifier>{9da3d472-36e7-415f-8f21-9fa506f561e4}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Packet">
       <UniqueIdentifier>{df729288-c8a7-47c4-9907-27ef9fc51fe0}</UniqueIdentifier>
     </Filter>
@@ -13,18 +10,17 @@
     <Filter Include="DB">
       <UniqueIdentifier>{482b65e4-28e7-403e-85f0-a32d59eaf097}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Utils">
+      <UniqueIdentifier>{b7a1115a-cd4d-47d4-91ee-6ff64409dc81}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Main">
+      <UniqueIdentifier>{af8c363f-d7b2-4ea3-93d2-abd4951d9a66}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Utils\tinyXml">
+      <UniqueIdentifier>{02642fd3-2421-420b-a65a-0f0862fcbfaa}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Define.h">
-      <Filter>ServerCore</Filter>
-    </ClInclude>
-    <ClInclude Include="IOCP.h">
-      <Filter>ServerCore</Filter>
-    </ClInclude>
-    <ClInclude Include="ChatServer.h" />
-    <ClInclude Include="Session.h">
-      <Filter>ServerCore</Filter>
-    </ClInclude>
     <ClInclude Include="Packet.h">
       <Filter>Packet</Filter>
     </ClInclude>
@@ -37,11 +33,10 @@
     <ClInclude Include="UserManager.h">
       <Filter>Contents</Filter>
     </ClInclude>
-    <ClInclude Include="ErrorCode.h" />
     <ClInclude Include="DBConnection.h">
       <Filter>DB</Filter>
     </ClInclude>
-    <ClInclude Include="DBConnectionPool.h">
+    <ClInclude Include="DBConnectionManager.h">
       <Filter>DB</Filter>
     </ClInclude>
     <ClInclude Include="DBInfo.h">
@@ -56,17 +51,62 @@
     <ClInclude Include="RedisManager.h">
       <Filter>DB</Filter>
     </ClInclude>
+    <ClInclude Include="ErrorCode.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="pch.h">
+      <Filter>Main</Filter>
+    </ClInclude>
+    <ClInclude Include="Config.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="Utils.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="tinyxml2.h">
+      <Filter>Utils\tinyXml</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp" />
     <ClCompile Include="PacketManager.cpp">
       <Filter>Packet</Filter>
     </ClCompile>
     <ClCompile Include="User.cpp">
       <Filter>Contents</Filter>
     </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>Main</Filter>
+    </ClCompile>
+    <ClCompile Include="pch.cpp">
+      <Filter>Main</Filter>
+    </ClCompile>
+    <ClCompile Include="Utils.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="Config.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="tinyxml2.cpp">
+      <Filter>Utils\tinyXml</Filter>
+    </ClCompile>
+    <ClCompile Include="UserManager.cpp">
+      <Filter>Contents</Filter>
+    </ClCompile>
+    <ClCompile Include="Room.cpp">
+      <Filter>Contents</Filter>
+    </ClCompile>
+    <ClCompile Include="RoomManager.cpp">
+      <Filter>Contents</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
+    <Xml Include="config.xml">
+      <Filter>Main</Filter>
+    </Xml>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config">
+      <Filter>Main</Filter>
+    </None>
   </ItemGroup>
 </Project>
